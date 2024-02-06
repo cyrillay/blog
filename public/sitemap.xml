@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://blog.lays.pro./</loc>
+    <lastmod>2024-02-06T21:51:51+01:00</lastmod>
+  </url><url>
+    <loc>https://blog.lays.pro./posts/</loc>
+    <lastmod>2024-02-06T21:51:51+01:00</lastmod>
+  </url><url>
+    <loc>https://blog.lays.pro./posts/spark-best-practices/</loc>
+    <lastmod>2024-02-06T21:51:51+01:00</lastmod>
+  </url><url>
+    <loc>https://blog.lays.pro./categories/</loc>
+  </url><url>
+    <loc>https://blog.lays.pro./posts/papermod/</loc>
+  </url><url>
+    <loc>https://blog.lays.pro./tags/</loc>
+  </url>
+</urlset>
