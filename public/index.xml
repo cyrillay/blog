@@ -1,24 +1,50 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>AI &amp; Data blog</title>
+    <title>Cyril LAY</title>
     <link>https://blog.lays.pro./</link>
-    <description>Recent content on AI &amp; Data blog</description>
+    <description>Recent content on Cyril LAY</description>
     <image>
-      <title>AI &amp; Data blog</title>
+      <title>Cyril LAY</title>
       <url>https://blog.lays.pro./assets/images/mixtral.png</url>
       <link>https://blog.lays.pro./assets/images/mixtral.png</link>
     </image>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 06 Feb 2024 21:51:51 +0100</lastBuildDate>
+    <lastBuildDate>Tue, 06 Feb 2024 23:09:33 +0100</lastBuildDate>
     <atom:link href="https://blog.lays.pro./index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Develop a Retrieval Augmented Generation (RAG) LLM Application</title>
+      <link>https://blog.lays.pro./posts/how-to-build-a-rag/</link>
+      <pubDate>Tue, 06 Feb 2024 23:09:33 +0100</pubDate>
+      <guid>https://blog.lays.pro./posts/how-to-build-a-rag/</guid>
+      <description>Retrieval-augmented generation (RAG) is a technique for enhancing the accuracy, reliability and relevance of generative AI models with facts fetched from internal or external sources.
+Let&amp;rsquo;s dive into building a RAG-based LLM application using publicly available data. This guide walks you through from setup to scaling, with a peek into optimization techniques like reranking and fine-tuning.
+What we&amp;rsquo;ll cover: 💻 Setting up and processing workloads locally. 🚀 Scaling your solution to the cloud effortlessly.</description>
+    </item>
+    <item>
+      <title>Detect Deep Fakes in 30 minutes with Computer Vision</title>
+      <link>https://blog.lays.pro./posts/deep-fake-detection/</link>
+      <pubDate>Sat, 01 Dec 2018 00:00:00 +0000</pubDate>
+      <guid>https://blog.lays.pro./posts/deep-fake-detection/</guid>
+      <description>In the realm of digital content, the rise of deep fakes has presented a unique set of challenges. I joined the Kaggle Deep Fake Detection Challenge (DFDC) and challenged myself to submit a working solution in two days maximum. I wrote my approach below. Code is here.
+The Challenge at a Glance The dataset size is a challenge by itself, being a 500GB of video content dataset.
+Approach and Methodology Frame Extraction: Capture a few frames from each video to immediately reduce the dataset size by 90%, and obtain something small to iterate with.</description>
+    </item>
     <item>
       <title>Spark Best Practices</title>
       <link>https://blog.lays.pro./posts/spark-best-practices/</link>
-      <pubDate>Tue, 06 Feb 2024 21:51:51 +0100</pubDate>
+      <pubDate>Mon, 22 May 2017 00:00:00 +0000</pubDate>
       <guid>https://blog.lays.pro./posts/spark-best-practices/</guid>
       <description> </description>
+    </item>
+    <item>
+      <title>Detecting bot traffic on a webserver</title>
+      <link>https://blog.lays.pro./posts/bot-detection/</link>
+      <pubDate>Sun, 26 Feb 2017 23:18:58 +0100</pubDate>
+      <guid>https://blog.lays.pro./posts/bot-detection/</guid>
+      <description>TL;DR I did a basic bot detection POC/analysis on HTTP logs of a website, for an interview with a company in 2017. Here are the results :
+Among the 68,000 unique IPs, 10% of them were classified as potential bots by our algorithm. Among the 5 million requests, 80% were classified as bot traffic. According to this article, 40% of the overall web traffic comes from bots. Given the simplicity of our algorithm, it is most probable that it flags a lot of false positives, as we will see very soon.</description>
     </item>
   </channel>
 </rss>

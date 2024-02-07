@@ -1,18 +1,20 @@
 baseURL: https://blog.lays.pro./
 languageCode: en-us
-title: AI & Data blog
+title: Cyril LAY
 theme: ["PaperMod"]
 enableEmoji: true
 enableInlineShortcodes: true
 
 params:
-  env: production 
+  env: production
   title: AI & Data blog by Cyril LAY
-  description: "Technical AI and data blog : blog posts about LLMs, generative AI, RAG, big data, 
+  description: "Technical AI and data blog : blog posts about LLMs, generative AI, RAG, big data,
 etc."
   keywords: [Blog, Portfolio, AI, Data, LLM]
   author: Cyril LAY
   images: ["assets/images/mixtral.png"]
+  defaultTheme: light
+  disableThemeToggle: true
   ShowCodeCopyButtons: true
 
 

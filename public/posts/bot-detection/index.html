@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Detecting bot traffic on a webserver | Cyril LAY</title>
+<meta name="keywords" content="">
+<meta name="description" content="TL;DR I did a basic bot detection POC/analysis on HTTP logs of a website, for an interview with a company in 2017. Here are the results :
+Among the 68,000 unique IPs, 10% of them were classified as potential bots by our algorithm. Among the 5 million requests, 80% were classified as bot traffic. According to this article, 40% of the overall web traffic comes from bots. Given the simplicity of our algorithm, it is most probable that it flags a lot of false positives, as we will see very soon.">
+<meta name="author" content="Cyril LAY">
+<link rel="canonical" href="https://blog.lays.pro./posts/bot-detection/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.5ff2630c4d1b3e25bc21f0ecd96681dbcf58219e741fa627857820b5485cb770.css" integrity="sha256-X/JjDE0bPiW8IfDs2WaB289YIZ50H6YnhXggtUhct3A=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://blog.lays.pro./favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://blog.lays.pro./favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://blog.lays.pro./favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://blog.lays.pro./apple-touch-icon.png">
+<link rel="mask-icon" href="https://blog.lays.pro./safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Detecting bot traffic on a webserver" />
+<meta property="og:description" content="TL;DR I did a basic bot detection POC/analysis on HTTP logs of a website, for an interview with a company in 2017. Here are the results :
+Among the 68,000 unique IPs, 10% of them were classified as potential bots by our algorithm. Among the 5 million requests, 80% were classified as bot traffic. According to this article, 40% of the overall web traffic comes from bots. Given the simplicity of our algorithm, it is most probable that it flags a lot of false positives, as we will see very soon." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.lays.pro./posts/bot-detection/" /><meta property="og:image" content="https://blog.lays.pro./assets/images/mixtral.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2017-02-26T23:18:58+01:00" />
+<meta property="article:modified_time" content="2017-02-26T23:18:58+01:00" /><meta property="og:site_name" content="AI &amp; Data blog by Cyril LAY" />
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://blog.lays.pro./assets/images/mixtral.png"/>
+
+<meta name="twitter:title" content="Detecting bot traffic on a webserver"/>
+<meta name="twitter:description" content="TL;DR I did a basic bot detection POC/analysis on HTTP logs of a website, for an interview with a company in 2017. Here are the results :
+Among the 68,000 unique IPs, 10% of them were classified as potential bots by our algorithm. Among the 5 million requests, 80% were classified as bot traffic. According to this article, 40% of the overall web traffic comes from bots. Given the simplicity of our algorithm, it is most probable that it flags a lot of false positives, as we will see very soon."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://blog.lays.pro./posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Detecting bot traffic on a webserver",
+      "item": "https://blog.lays.pro./posts/bot-detection/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Detecting bot traffic on a webserver",
+  "name": "Detecting bot traffic on a webserver",
+  "description": "TL;DR I did a basic bot detection POC/analysis on HTTP logs of a website, for an interview with a company in 2017. Here are the results :\nAmong the 68,000 unique IPs, 10% of them were classified as potential bots by our algorithm. Among the 5 million requests, 80% were classified as bot traffic. According to this article, 40% of the overall web traffic comes from bots. Given the simplicity of our algorithm, it is most probable that it flags a lot of false positives, as we will see very soon.",
+  "keywords": [
+    
+  ],
+  "articleBody": " TL;DR I did a basic bot detection POC/analysis on HTTP logs of a website, for an interview with a company in 2017. Here are the results :\nAmong the 68,000 unique IPs, 10% of them were classified as potential bots by our algorithm. Among the 5 million requests, 80% were classified as bot traffic. According to this article, 40% of the overall web traffic comes from bots. Given the simplicity of our algorithm, it is most probable that it flags a lot of false positives, as we will see very soon. Over the 4 million requests flagged as potential bots: 18% were because of a request to the robots.txt file. Hence, at least 18% of the bots might be “good” bots, as they announce themselves as bots by requesting this file. 3% had the word “bot”, “crawler” or “spider” in their user agent. 58% did at least 100 requests in less than an hour, with an average inter request time under 20 seconds. 54% did at least 1000 requests in less than a day, with an average inter request time under 20 seconds. 91% once did more than 100 requests in an hour. 96% once did more than 1000 requests in a day. Those last two thresholds are most probably the most wrong ones. In fact, if you open the chrome console and inspect the number of requests triggered when visiting almhuette-raith.at, you will notice that it amounts to 33. Hence, a user that often visits the website, maybe the administrator of the website, would be flagged as a bot. Of course, our system is a quick and dirty POC that does not aim to be deployed in production.\nIntroduction The goal of this project was to create a POC for a bot detection system, by using a data file containing all HTTP requests to a server. I started by browsing and skimming through a few technical and scientific papers and resources to gather knowledge on how bot detection is done when applied to HTTP logs, those resources will be linked at the bottom of this article.\nCase study As an example, we’ll use logs from the website http://www.almhuette-raith.at.\nWhat is inside an HTTP request ? Here is an anonymised example of a log request contained in the access.log file :\n91.112.185.43 - - [21/Mar/2020:17:17:49 +0100] \"GET /apache-log/access.log HTTP/1.0\" 200 656584 \"http://google.com\" \"Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36\" \"-\"\n91.112.185.43 is the IP from the the computer that made the request (the remote host) 21/Mar/2020:17:17:49 +0100 is the timestamp of the request GET /index.html is the request itself 200 is the HTTP code returned to the client 656584 is the size of the response made to the client http://google.com is the referrer, the URL of the page from which this request was initiated Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 is the user agent, a browser identification string Basic bot detection features Using the fields from above, we can already detect many bots using the following rules :\nPresence of a bot name in the user agent (Googlebot, AdsBot-Google, BingBot…). Presence of a request to the ‘robots.txt’ file The IP address is known to be a bot Then, we can group the requests of similar IPs during a timeframe, to gather statistics on those sessions, which will become bot detection features, such as :\nThe mean time spent per page is below 0.5 seconds : a bot would not spend time “reading” a page like a human The referrer is empty for the all the requests of the session : a user usually navigates through websites and doesn’t enter the URL manually All the requests are “HEAD” requests instead of the more common GET : the HEAD request is often used by bots for efficiency No image is loaded when reading the page The session had a single request Implementation Parsing the log file Let’s jump right into the implementation and download the log file :\nwget http://www.almhuette-raith.at/apache-log/access.log Then, we need to parse it and extract the fields of interest :\nimport re import pandas as pd import datetime as dt from datetime import datetime def parser(log_line): regex = ( r\"^(?P.*?)\" + r\"\\s\" r\"\\s\" + r\"\\s\" r\"\\S+\" + r\"\\s\" r\"\\S+\" + r\"\\s\" r\"(?P\\[.*?\\])\" + r\"\\s\" r\"\\\"(?P.*?)\\\"\" + r\"\\s\" r\"(?P\\d{3})\" + r\"\\s\" r\"(?P\\S+)\" + r\"\\s\" r\"(?P\\S+)\" + r\"\\s\" r\"(?P\\\"(.+?)\\\")\" ) match = re.search(regex, log_line) if not match: return None else: return ( match.group(\"host\"), match.group(\"timestamp\"), match.group(\"request\"), match.group(\"status\"), match.group(\"size\"), match.group(\"referrer\"), match.group(\"user_agent\"), ) def parse_log_file(path, from_date: dt.date = None): if not from_date: from_date = dt.date(2020, 3, 20) data = { \"host\": [], \"timestamp\": [], \"request\": [], \"status\": [], \"size\": [], \"referrer\": [], \"user_agent\": [], } with open(path, \"r\") as file: lines = file.readlines() for line in reversed(lines): parsed_log_line = parser(line) if parsed_log_line: ( host, time, request, status, size, referrer, user_agent, ) = parsed_log_line else: continue parsed_date = datetime.strptime(time, \"[%d/%b/%Y:%H:%M:%S %z]\") if parsed_date.date() \u003c from_date: break data[\"host\"].append(host) data[\"timestamp\"].append(parsed_date) data[\"request\"].append(request) data[\"status\"].append(status) data[\"size\"].append(size) data[\"referrer\"].append(referrer) data[\"user_agent\"].append(user_agent) return pd.DataFrame(data) df = parse_log_file(\"../access.log\") Generating session-level features Now that we parsed the log file and have it available for further processing, we can window the dataframe to group sessions of same IPs together, and compute some metrics at a session-level, which will become useful features to apply more detection rules.\nFor example, we will compute the following :\ndef get_session_attributes(df, aggregation_level=\"hour\"): aggregation_levels = {\"day\": [\"host\", \"day\"], \"hour\": [\"host\", \"day\", \"hour\"]} if aggregation_level not in aggregation_levels: raise ValueError(f\"aggregation_level must be one of {aggregation_levels}.\") aggregation_columns = aggregation_levels[aggregation_level] df = df.sort_values(by=aggregation_columns + [\"timestamp\"], ascending=True) df[\"timestamp_previous\"] = df.groupby(aggregation_columns)[\"timestamp\"].shift(1) df[\"timestamp_previous\"] = pd.to_datetime(df[\"timestamp_previous\"], utc=True) df[\"request_time_delta\"] = ( df[\"timestamp\"] - df[\"timestamp_previous\"] ).dt.total_seconds() aggregated_df = ( df.groupby(aggregation_columns) .agg( number_requests_GET=pd.NamedAgg( column=\"request\", aggfunc=(lambda req: (req.str.startswith(\"GET\")).sum()), ), number_requests_HEAD=pd.NamedAgg( column=\"request\", aggfunc=(lambda req: (req.str.startswith(\"HEAD\")).sum()), ), number_requests_POST=pd.NamedAgg( column=\"request\", aggfunc=(lambda req: (req.str.startswith(\"POST\")).sum()), ), number_requests_no_referrer=pd.NamedAgg( column=\"referrer\", aggfunc=(lambda req: (req == '\"-\"').sum()), ), number_requests_total=pd.NamedAgg(column=\"request\", aggfunc=\"count\"), avg_request_interarrival_time=pd.NamedAgg( column=\"request_time_delta\", aggfunc=\"mean\" ), ) .reset_index() ) aggregated_df[\"HEAD_requests_ratio\"] = ( aggregated_df[\"number_requests_HEAD\"] / aggregated_df[\"number_requests_total\"] ) aggregated_df[\"GET_requests_ratio\"] = ( aggregated_df[\"number_requests_GET\"] / aggregated_df[\"number_requests_total\"] ) aggregated_df[\"POST_requests_ratio\"] = ( aggregated_df[\"number_requests_POST\"] / aggregated_df[\"number_requests_total\"] ) aggregated_df[\"no_referrer_requests_ratio\"] = ( aggregated_df[\"number_requests_no_referrer\"] / aggregated_df[\"number_requests_total\"] ) return aggregated_df hour_sessions = get_session_attributes(df, aggregation_level=\"hour\") day_sessions = get_session_attributes(df, aggregation_level=\"day\") Rules implementation Here we can create a few functions that return IP addresses that matched the rules defined above\ndef has_robots_txt_request(requests_df): return requests_df[requests_df[\"request\"].str.contains(\"robots.txt\")][\"host\"].unique() def has_bot_name_in_user_agent(requests_df, known_bot_names=None): if known_bot_names is None: known_bot_names = [\"Googlebot\", \"bingbot\", \"bot\", \"crawler\", \"spider\"] filter_condition = \"|\".join(known_bot_names).lower() return requests_df[ requests_df[\"user_agent\"].str.lower().str.contains(filter_condition) ][\"host\"].unique() def has_low_request_interrarival_time(sessions_df, threshold_request_interarrival_time=20, threshold_number_requests_no_referrer=30): return sessions_df[ (sessions_df[\"number_requests_no_referrer\"] \u003e threshold_number_requests_no_referrer) \u0026 (sessions_df[\"avg_request_interarrival_time\"] \u003c threshold_request_interarrival_time) ][\"host\"].unique() def has_high_number_requests(sessions_df, threshold=1500): return sessions_df[sessions_df[\"number_requests_total\"] \u003e threshold][\"host\"].unique() Results Here are some statistics obtained for all logs from 2015 to 2020:\nAmong the 68,000 unique IPs, 10% of them were classified as potential bots by our algorithm. Among the 5 million requests, 80% were classified as bot traffic. According to this article, 40% of the overall web traffic comes from bots. Given the simplicity of our algorithm, it is most probable that it flags a lot of false positives, as we will see very soon. Over the 4 million requests flagged as potential bots: 18% were because of a request to the robots.txt file. Hence, at least 18% of the bots might be “good” bots, as they announce themselves as bots by requesting this file. 3% had the word “bot”, “crawler” or “spider” in their user agent. 58% did at least 100 requests in less than an hour, with an average inter request time under 20 seconds. 54% did at least 1000 requests in less than a day, with an average inter request time under 20 seconds. 91% once did more than 100 requests in an hour. 96% once did more than 1000 requests in a day. Those last two thresholds are most probably the most wrong ones. In fact, if you open the chrome console and inspect the number of requests triggered when visiting almhuette-raith.at, you will notice that it amounts to 33. Hence, a user that often visits the website, maybe the administrator of the website, would be flagged as a bot. Of course, our system is a quick and dirty POC that does not aim to be deployed in production.\nNext steps Modify the thresholds to avoid false positives For now, the script only prints the IPs and doesn’t take any further action. In a real-world scenario, the list of IPs could be inserted into a database to be regularly cached at the Apache server level, for example (more information about dynamic blacklisting here). In the output dataframe, boolean columns should be added for each IP, to know which condition(s) it matched to be flagged as a bot, for reporting purposes. If the requests are to be analysed from a file (versus a stream), the job could be scheduled in something like Airflow. It would be good to avoid scheduling the analysis directly on the instance running the server, the best would be to schedule it in a container (that would have access to the log file) managed by Airflow or Kubernetes for example. In addition to IP-blocking, other types of blocking could be explored: user-agent, cookies, request method etc (interesting ideas here). Explore and implement relevant ad fraud rules: https://www.criteo.com/insights/best-practices-combating-click-fraud-data-series-part-2/. ",
+  "wordCount" : "1500",
+  "inLanguage": "en",
+  "datePublished": "2017-02-26T23:18:58+01:00",
+  "dateModified": "2017-02-26T23:18:58+01:00",
+  "author":{
+    "@type": "Person",
+    "name": "Cyril LAY"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://blog.lays.pro./posts/bot-detection/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Cyril LAY",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://blog.lays.pro./favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://blog.lays.pro./" accesskey="h" title="Cyril LAY (Alt + H)">Cyril LAY</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Detecting bot traffic on a webserver
+    </h1>
+    <div class="post-meta"><span title='2017-02-26 23:18:58 +0100 CET'>February 26, 2017</span>&nbsp;·&nbsp;Cyril LAY
+
+</div>
+  </header> 
+  <div class="post-content"><p><img loading="lazy" src="/bot-detection.webp" alt="bot detection"  />
+</p>
+<h2 id="tldr">TL;DR<a hidden class="anchor" aria-hidden="true" href="#tldr">#</a></h2>
+<p>I did a basic bot detection POC/analysis on HTTP logs of a website, for an interview with a company in 2017. Here are the results :</p>
+<ul>
+<li>Among the 68,000 unique IPs, <strong>10%</strong> of them were classified as potential bots by our algorithm.</li>
+<li>Among the 5 million requests, <strong>80%</strong> were classified as bot traffic. According to <a href="https://www.cloudflare.com/learning/bots/what-is-bot-traffic/">this article</a>, <strong>40%</strong> of the overall web traffic comes from bots. Given the simplicity of our algorithm, it is most probable that it flags a lot of false positives, as we will see very soon.</li>
+<li>Over the 4 million requests flagged as potential bots:
+<ul>
+<li><strong>18%</strong> were because of a request to the <code>robots.txt</code> file. Hence, at least <strong>18%</strong> of the bots might be “good” bots, as they announce themselves as bots by requesting this file.</li>
+<li><strong>3%</strong> had the word “bot”, “crawler” or “spider” in their user agent.</li>
+<li><strong>58%</strong> did at least 100 requests in less than an hour, with an average inter request time under 20 seconds.</li>
+<li><strong>54%</strong> did at least 1000 requests in less than a day, with an average inter request time under 20 seconds.</li>
+<li><strong>91%</strong> once did more than 100 requests in an hour.</li>
+<li><strong>96%</strong> once did more than 1000 requests in a day.</li>
+</ul>
+</li>
+</ul>
+<p>Those last two thresholds are most probably the most wrong ones. In fact, if you open the chrome console and inspect the number of requests triggered when visiting <code>almhuette-raith.at</code>, you will notice that it amounts to 33. Hence, a user that often visits the website, maybe the administrator of the website, would be flagged as a bot. Of course, our system is a quick and dirty POC that does not aim to be deployed in production.</p>
+<h2 id="introduction">Introduction<a hidden class="anchor" aria-hidden="true" href="#introduction">#</a></h2>
+<p>The goal of this project was to create a POC for a bot detection system, by using a data file containing all HTTP requests to a server. I started by browsing and skimming through a few technical and scientific papers and resources to gather knowledge on how bot detection is done when applied to HTTP logs, those resources will be linked at the bottom of this article.</p>
+<h2 id="case-study">Case study<a hidden class="anchor" aria-hidden="true" href="#case-study">#</a></h2>
+<p>As an example, we’ll use logs from the website <code>http://www.almhuette-raith.at</code>.</p>
+<h3 id="what-is-inside-an-http-request-">What is inside an HTTP request ?<a hidden class="anchor" aria-hidden="true" href="#what-is-inside-an-http-request-">#</a></h3>
+<p>Here is an anonymised example of a log request contained in the <code>access.log</code> file :</p>
+<p><code>91.112.185.43 - - [21/Mar/2020:17:17:49 +0100] &quot;GET /apache-log/access.log HTTP/1.0&quot; 200 656584 &quot;http://google.com&quot; &quot;Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36&quot; &quot;-&quot;</code></p>
+<ul>
+<li><strong>91.112.185.43</strong> is the IP from the the computer that made the request (the remote host)</li>
+<li><strong>21/Mar/2020:17:17:49 +0100</strong> is the timestamp of the request</li>
+<li><strong>GET /index.html</strong> is the request itself</li>
+<li><strong>200</strong> is the HTTP code returned to the client</li>
+<li><strong>656584</strong> is the size of the response made to the client</li>
+<li><strong><a href="http://google.com">http://google.com</a></strong> is the referrer, the URL of the page from which this request was initiated</li>
+<li><strong>Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36</strong> is the user agent, a browser identification string</li>
+</ul>
+<h3 id="basic-bot-detection-features">Basic bot detection features<a hidden class="anchor" aria-hidden="true" href="#basic-bot-detection-features">#</a></h3>
+<p>Using the fields from above, we can already detect many bots using the following rules :</p>
+<ul>
+<li>Presence of a bot name in the user agent (Googlebot, AdsBot-Google, BingBot…).</li>
+<li>Presence of a request to the ‘robots.txt’ file</li>
+<li>The IP address is <a href="https://udger.com/resources/ip-list">known to be a bot</a></li>
+</ul>
+<p>Then, we can group the requests of similar IPs during a timeframe, to gather statistics on those sessions, which will become bot detection features, such as :</p>
+<ul>
+<li>The mean time spent per page is below 0.5 seconds : a bot would not spend time “reading” a page like a human</li>
+<li>The referrer is empty for the all the requests of the session : a user usually navigates through websites and doesn’t enter the URL manually</li>
+<li>All the requests are “HEAD” requests instead of the more common GET : the HEAD request is often used by bots for efficiency</li>
+<li>No image is loaded when reading the page</li>
+<li>The session had a single request</li>
+</ul>
+<h2 id="implementation">Implementation<a hidden class="anchor" aria-hidden="true" href="#implementation">#</a></h2>
+<h3 id="parsing-the-log-file">Parsing the log file<a hidden class="anchor" aria-hidden="true" href="#parsing-the-log-file">#</a></h3>
+<p>Let’s jump right into the implementation and download the log file :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>wget http://www.almhuette-raith.at/apache-log/access.log
+</span></span></code></pre></div><p>Then, we need to parse it and extract the fields of interest :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> re
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> pandas <span style="color:#66d9ef">as</span> pd
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> datetime <span style="color:#66d9ef">as</span> dt
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> datetime <span style="color:#f92672">import</span> datetime
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">parser</span>(log_line):
+</span></span><span style="display:flex;"><span>    regex <span style="color:#f92672">=</span> (
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;^(?P&lt;host&gt;.*?)&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\s&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\s&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\s&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\S+&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\s&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\S+&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\s&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;(?P&lt;timestamp&gt;\[.*?\])&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\s&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">(?P&lt;request&gt;.*?)</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\s&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;(?P&lt;status&gt;\d</span><span style="color:#e6db74">{3}</span><span style="color:#e6db74">)&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\s&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;(?P&lt;size&gt;\S+)&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\s&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;(?P&lt;referrer&gt;\S+)&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;\s&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;(?P&lt;user_agent&gt;</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">(.+?)</span><span style="color:#ae81ff">\&#34;</span><span style="color:#e6db74">)&#34;</span>
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">match</span> <span style="color:#f92672">=</span> re<span style="color:#f92672">.</span>search(regex, log_line)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> <span style="color:#66d9ef">match</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">None</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> (
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">match</span><span style="color:#f92672">.</span>group(<span style="color:#e6db74">&#34;host&#34;</span>),
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">match</span><span style="color:#f92672">.</span>group(<span style="color:#e6db74">&#34;timestamp&#34;</span>),
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">match</span><span style="color:#f92672">.</span>group(<span style="color:#e6db74">&#34;request&#34;</span>),
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">match</span><span style="color:#f92672">.</span>group(<span style="color:#e6db74">&#34;status&#34;</span>),
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">match</span><span style="color:#f92672">.</span>group(<span style="color:#e6db74">&#34;size&#34;</span>),
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">match</span><span style="color:#f92672">.</span>group(<span style="color:#e6db74">&#34;referrer&#34;</span>),
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">match</span><span style="color:#f92672">.</span>group(<span style="color:#e6db74">&#34;user_agent&#34;</span>),
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">parse_log_file</span>(path, from_date: dt<span style="color:#f92672">.</span>date <span style="color:#f92672">=</span> <span style="color:#66d9ef">None</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> from_date:
+</span></span><span style="display:flex;"><span>        from_date <span style="color:#f92672">=</span> dt<span style="color:#f92672">.</span>date(<span style="color:#ae81ff">2020</span>, <span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">20</span>)
+</span></span><span style="display:flex;"><span>    data <span style="color:#f92672">=</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;host&#34;</span>: [],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;timestamp&#34;</span>: [],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;request&#34;</span>: [],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;status&#34;</span>: [],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;size&#34;</span>: [],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;referrer&#34;</span>: [],
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;user_agent&#34;</span>: [],
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">with</span> open(path, <span style="color:#e6db74">&#34;r&#34;</span>) <span style="color:#66d9ef">as</span> file:
+</span></span><span style="display:flex;"><span>        lines <span style="color:#f92672">=</span> file<span style="color:#f92672">.</span>readlines()
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">for</span> line <span style="color:#f92672">in</span> reversed(lines):
+</span></span><span style="display:flex;"><span>            parsed_log_line <span style="color:#f92672">=</span> parser(line)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> parsed_log_line:
+</span></span><span style="display:flex;"><span>                (
+</span></span><span style="display:flex;"><span>                    host,
+</span></span><span style="display:flex;"><span>                    time,
+</span></span><span style="display:flex;"><span>                    request,
+</span></span><span style="display:flex;"><span>                    status,
+</span></span><span style="display:flex;"><span>                    size,
+</span></span><span style="display:flex;"><span>                    referrer,
+</span></span><span style="display:flex;"><span>                    user_agent,
+</span></span><span style="display:flex;"><span>                ) <span style="color:#f92672">=</span> parsed_log_line
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">else</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>            parsed_date <span style="color:#f92672">=</span> datetime<span style="color:#f92672">.</span>strptime(time, <span style="color:#e6db74">&#34;[</span><span style="color:#e6db74">%d</span><span style="color:#e6db74">/%b/%Y:%H:%M:%S %z]&#34;</span>)
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> parsed_date<span style="color:#f92672">.</span>date() <span style="color:#f92672">&lt;</span> from_date:
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>            data[<span style="color:#e6db74">&#34;host&#34;</span>]<span style="color:#f92672">.</span>append(host)
+</span></span><span style="display:flex;"><span>            data[<span style="color:#e6db74">&#34;timestamp&#34;</span>]<span style="color:#f92672">.</span>append(parsed_date)
+</span></span><span style="display:flex;"><span>            data[<span style="color:#e6db74">&#34;request&#34;</span>]<span style="color:#f92672">.</span>append(request)
+</span></span><span style="display:flex;"><span>            data[<span style="color:#e6db74">&#34;status&#34;</span>]<span style="color:#f92672">.</span>append(status)
+</span></span><span style="display:flex;"><span>            data[<span style="color:#e6db74">&#34;size&#34;</span>]<span style="color:#f92672">.</span>append(size)
+</span></span><span style="display:flex;"><span>            data[<span style="color:#e6db74">&#34;referrer&#34;</span>]<span style="color:#f92672">.</span>append(referrer)
+</span></span><span style="display:flex;"><span>            data[<span style="color:#e6db74">&#34;user_agent&#34;</span>]<span style="color:#f92672">.</span>append(user_agent)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> pd<span style="color:#f92672">.</span>DataFrame(data)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>df <span style="color:#f92672">=</span> parse_log_file(<span style="color:#e6db74">&#34;../access.log&#34;</span>)
+</span></span></code></pre></div><h3 id="generating-session-level-features">Generating session-level features<a hidden class="anchor" aria-hidden="true" href="#generating-session-level-features">#</a></h3>
+<p>Now that we parsed the log file and have it available for further processing, we can window the dataframe to group sessions of same IPs together, and compute some metrics at a session-level, which will become useful features to apply more detection rules.</p>
+<p>For example, we will compute the following :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_session_attributes</span>(df, aggregation_level<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;hour&#34;</span>):
+</span></span><span style="display:flex;"><span>    aggregation_levels <span style="color:#f92672">=</span> {<span style="color:#e6db74">&#34;day&#34;</span>: [<span style="color:#e6db74">&#34;host&#34;</span>, <span style="color:#e6db74">&#34;day&#34;</span>], <span style="color:#e6db74">&#34;hour&#34;</span>: [<span style="color:#e6db74">&#34;host&#34;</span>, <span style="color:#e6db74">&#34;day&#34;</span>, <span style="color:#e6db74">&#34;hour&#34;</span>]}
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> aggregation_level <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> aggregation_levels:
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">ValueError</span>(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;aggregation_level must be one of </span><span style="color:#e6db74">{</span>aggregation_levels<span style="color:#e6db74">}</span><span style="color:#e6db74">.&#34;</span>)
+</span></span><span style="display:flex;"><span>    aggregation_columns <span style="color:#f92672">=</span> aggregation_levels[aggregation_level]
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    df <span style="color:#f92672">=</span> df<span style="color:#f92672">.</span>sort_values(by<span style="color:#f92672">=</span>aggregation_columns <span style="color:#f92672">+</span> [<span style="color:#e6db74">&#34;timestamp&#34;</span>], ascending<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    df[<span style="color:#e6db74">&#34;timestamp_previous&#34;</span>] <span style="color:#f92672">=</span> df<span style="color:#f92672">.</span>groupby(aggregation_columns)[<span style="color:#e6db74">&#34;timestamp&#34;</span>]<span style="color:#f92672">.</span>shift(<span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>    df[<span style="color:#e6db74">&#34;timestamp_previous&#34;</span>] <span style="color:#f92672">=</span> pd<span style="color:#f92672">.</span>to_datetime(df[<span style="color:#e6db74">&#34;timestamp_previous&#34;</span>], utc<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>)
+</span></span><span style="display:flex;"><span>    df[<span style="color:#e6db74">&#34;request_time_delta&#34;</span>] <span style="color:#f92672">=</span> (
+</span></span><span style="display:flex;"><span>        df[<span style="color:#e6db74">&#34;timestamp&#34;</span>] <span style="color:#f92672">-</span> df[<span style="color:#e6db74">&#34;timestamp_previous&#34;</span>]
+</span></span><span style="display:flex;"><span>    )<span style="color:#f92672">.</span>dt<span style="color:#f92672">.</span>total_seconds()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    aggregated_df <span style="color:#f92672">=</span> (
+</span></span><span style="display:flex;"><span>        df<span style="color:#f92672">.</span>groupby(aggregation_columns)
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">.</span>agg(
+</span></span><span style="display:flex;"><span>            number_requests_GET<span style="color:#f92672">=</span>pd<span style="color:#f92672">.</span>NamedAgg(
+</span></span><span style="display:flex;"><span>                column<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;request&#34;</span>,
+</span></span><span style="display:flex;"><span>                aggfunc<span style="color:#f92672">=</span>(<span style="color:#66d9ef">lambda</span> req: (req<span style="color:#f92672">.</span>str<span style="color:#f92672">.</span>startswith(<span style="color:#e6db74">&#34;GET&#34;</span>))<span style="color:#f92672">.</span>sum()),
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>            number_requests_HEAD<span style="color:#f92672">=</span>pd<span style="color:#f92672">.</span>NamedAgg(
+</span></span><span style="display:flex;"><span>                column<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;request&#34;</span>,
+</span></span><span style="display:flex;"><span>                aggfunc<span style="color:#f92672">=</span>(<span style="color:#66d9ef">lambda</span> req: (req<span style="color:#f92672">.</span>str<span style="color:#f92672">.</span>startswith(<span style="color:#e6db74">&#34;HEAD&#34;</span>))<span style="color:#f92672">.</span>sum()),
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>            number_requests_POST<span style="color:#f92672">=</span>pd<span style="color:#f92672">.</span>NamedAgg(
+</span></span><span style="display:flex;"><span>                column<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;request&#34;</span>,
+</span></span><span style="display:flex;"><span>                aggfunc<span style="color:#f92672">=</span>(<span style="color:#66d9ef">lambda</span> req: (req<span style="color:#f92672">.</span>str<span style="color:#f92672">.</span>startswith(<span style="color:#e6db74">&#34;POST&#34;</span>))<span style="color:#f92672">.</span>sum()),
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>            number_requests_no_referrer<span style="color:#f92672">=</span>pd<span style="color:#f92672">.</span>NamedAgg(
+</span></span><span style="display:flex;"><span>                column<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;referrer&#34;</span>,
+</span></span><span style="display:flex;"><span>                aggfunc<span style="color:#f92672">=</span>(<span style="color:#66d9ef">lambda</span> req: (req <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;&#34;-&#34;&#39;</span>)<span style="color:#f92672">.</span>sum()),
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>            number_requests_total<span style="color:#f92672">=</span>pd<span style="color:#f92672">.</span>NamedAgg(column<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;request&#34;</span>, aggfunc<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;count&#34;</span>),
+</span></span><span style="display:flex;"><span>            avg_request_interarrival_time<span style="color:#f92672">=</span>pd<span style="color:#f92672">.</span>NamedAgg(
+</span></span><span style="display:flex;"><span>                column<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;request_time_delta&#34;</span>, aggfunc<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;mean&#34;</span>
+</span></span><span style="display:flex;"><span>            ),
+</span></span><span style="display:flex;"><span>        )
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">.</span>reset_index()
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    aggregated_df[<span style="color:#e6db74">&#34;HEAD_requests_ratio&#34;</span>] <span style="color:#f92672">=</span> (
+</span></span><span style="display:flex;"><span>        aggregated_df[<span style="color:#e6db74">&#34;number_requests_HEAD&#34;</span>] <span style="color:#f92672">/</span> aggregated_df[<span style="color:#e6db74">&#34;number_requests_total&#34;</span>]
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    aggregated_df[<span style="color:#e6db74">&#34;GET_requests_ratio&#34;</span>] <span style="color:#f92672">=</span> (
+</span></span><span style="display:flex;"><span>        aggregated_df[<span style="color:#e6db74">&#34;number_requests_GET&#34;</span>] <span style="color:#f92672">/</span> aggregated_df[<span style="color:#e6db74">&#34;number_requests_total&#34;</span>]
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    aggregated_df[<span style="color:#e6db74">&#34;POST_requests_ratio&#34;</span>] <span style="color:#f92672">=</span> (
+</span></span><span style="display:flex;"><span>        aggregated_df[<span style="color:#e6db74">&#34;number_requests_POST&#34;</span>] <span style="color:#f92672">/</span> aggregated_df[<span style="color:#e6db74">&#34;number_requests_total&#34;</span>]
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    aggregated_df[<span style="color:#e6db74">&#34;no_referrer_requests_ratio&#34;</span>] <span style="color:#f92672">=</span> (
+</span></span><span style="display:flex;"><span>        aggregated_df[<span style="color:#e6db74">&#34;number_requests_no_referrer&#34;</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">/</span> aggregated_df[<span style="color:#e6db74">&#34;number_requests_total&#34;</span>]
+</span></span><span style="display:flex;"><span>    )
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> aggregated_df
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>hour_sessions <span style="color:#f92672">=</span> get_session_attributes(df, aggregation_level<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;hour&#34;</span>)
+</span></span><span style="display:flex;"><span>day_sessions <span style="color:#f92672">=</span> get_session_attributes(df, aggregation_level<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;day&#34;</span>)
+</span></span></code></pre></div><h3 id="rules-implementation">Rules implementation<a hidden class="anchor" aria-hidden="true" href="#rules-implementation">#</a></h3>
+<p>Here we can create a few functions that return IP addresses that matched the rules defined above</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">has_robots_txt_request</span>(requests_df):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> requests_df[requests_df[<span style="color:#e6db74">&#34;request&#34;</span>]<span style="color:#f92672">.</span>str<span style="color:#f92672">.</span>contains(<span style="color:#e6db74">&#34;robots.txt&#34;</span>)][<span style="color:#e6db74">&#34;host&#34;</span>]<span style="color:#f92672">.</span>unique()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">has_bot_name_in_user_agent</span>(requests_df, known_bot_names<span style="color:#f92672">=</span><span style="color:#66d9ef">None</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> known_bot_names <span style="color:#f92672">is</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>        known_bot_names <span style="color:#f92672">=</span> [<span style="color:#e6db74">&#34;Googlebot&#34;</span>, <span style="color:#e6db74">&#34;bingbot&#34;</span>, <span style="color:#e6db74">&#34;bot&#34;</span>, <span style="color:#e6db74">&#34;crawler&#34;</span>, <span style="color:#e6db74">&#34;spider&#34;</span>]
+</span></span><span style="display:flex;"><span>    filter_condition <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;|&#34;</span><span style="color:#f92672">.</span>join(known_bot_names)<span style="color:#f92672">.</span>lower()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> requests_df[
+</span></span><span style="display:flex;"><span>        requests_df[<span style="color:#e6db74">&#34;user_agent&#34;</span>]<span style="color:#f92672">.</span>str<span style="color:#f92672">.</span>lower()<span style="color:#f92672">.</span>str<span style="color:#f92672">.</span>contains(filter_condition)
+</span></span><span style="display:flex;"><span>    ][<span style="color:#e6db74">&#34;host&#34;</span>]<span style="color:#f92672">.</span>unique()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">has_low_request_interrarival_time</span>(sessions_df, threshold_request_interarrival_time<span style="color:#f92672">=</span><span style="color:#ae81ff">20</span>, threshold_number_requests_no_referrer<span style="color:#f92672">=</span><span style="color:#ae81ff">30</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> sessions_df[
+</span></span><span style="display:flex;"><span>        (sessions_df[<span style="color:#e6db74">&#34;number_requests_no_referrer&#34;</span>] <span style="color:#f92672">&gt;</span> threshold_number_requests_no_referrer)
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">&amp;</span> (sessions_df[<span style="color:#e6db74">&#34;avg_request_interarrival_time&#34;</span>] <span style="color:#f92672">&lt;</span> threshold_request_interarrival_time)
+</span></span><span style="display:flex;"><span>    ][<span style="color:#e6db74">&#34;host&#34;</span>]<span style="color:#f92672">.</span>unique()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">has_high_number_requests</span>(sessions_df, threshold<span style="color:#f92672">=</span><span style="color:#ae81ff">1500</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> sessions_df[sessions_df[<span style="color:#e6db74">&#34;number_requests_total&#34;</span>] <span style="color:#f92672">&gt;</span> threshold][<span style="color:#e6db74">&#34;host&#34;</span>]<span style="color:#f92672">.</span>unique()
+</span></span></code></pre></div><h2 id="results">Results<a hidden class="anchor" aria-hidden="true" href="#results">#</a></h2>
+<p>Here are some statistics obtained for all logs from 2015 to 2020:</p>
+<ul>
+<li>Among the 68,000 unique IPs, <strong>10%</strong> of them were classified as potential bots by our algorithm.</li>
+<li>Among the 5 million requests, <strong>80%</strong> were classified as bot traffic. According to <a href="https://www.cloudflare.com/learning/bots/what-is-bot-traffic/">this article</a>, <strong>40%</strong> of the overall web traffic comes from bots. Given the simplicity of our algorithm, it is most probable that it flags a lot of false positives, as we will see very soon.</li>
+<li>Over the 4 million requests flagged as potential bots:
+<ul>
+<li><strong>18%</strong> were because of a request to the <code>robots.txt</code> file. Hence, at least <strong>18%</strong> of the bots might be “good” bots, as they announce themselves as bots by requesting this file.</li>
+<li><strong>3%</strong> had the word “bot”, “crawler” or “spider” in their user agent.</li>
+<li><strong>58%</strong> did at least 100 requests in less than an hour, with an average inter request time under 20 seconds.</li>
+<li><strong>54%</strong> did at least 1000 requests in less than a day, with an average inter request time under 20 seconds.</li>
+<li><strong>91%</strong> once did more than 100 requests in an hour.</li>
+<li><strong>96%</strong> once did more than 1000 requests in a day.</li>
+</ul>
+</li>
+</ul>
+<p>Those last two thresholds are most probably the most wrong ones. In fact, if you open the chrome console and inspect the number of requests triggered when visiting <code>almhuette-raith.at</code>, you will notice that it amounts to 33. Hence, a user that often visits the website, maybe the administrator of the website, would be flagged as a bot. Of course, our system is a quick and dirty POC that does not aim to be deployed in production.</p>
+<h2 id="next-steps">Next steps<a hidden class="anchor" aria-hidden="true" href="#next-steps">#</a></h2>
+<ul>
+<li>Modify the thresholds to avoid false positives</li>
+<li>For now, the script only prints the IPs and doesn’t take any further action. In a real-world scenario, the list of IPs could be inserted into a database to be regularly cached at the Apache server level, for example (<a href="https://stackoverflow.com/questions/4676954/dynamically-update-apache-config-allow-from-ip-without-a-restart-reload">more information about dynamic blacklisting here</a>).</li>
+<li>In the output dataframe, boolean columns should be added for each IP, to know which condition(s) it matched to be flagged as a bot, for reporting purposes.</li>
+<li>If the requests are to be analysed from a file (versus a stream), the job could be scheduled in something like Airflow. It would be good to avoid scheduling the analysis directly on the instance running the server, the best would be to schedule it in a container (that would have access to the log file) managed by Airflow or Kubernetes for example.</li>
+<li>In addition to IP-blocking, other types of blocking could be explored: user-agent, cookies, request method etc (<a href="https://perishablepress.com/eight-ways-to-blacklist-with-apaches-mod_rewrite/">interesting ideas here</a>).</li>
+<li>Explore and implement relevant ad fraud rules: <a href="https://www.criteo.com/insights/best-practices-combating-click-fraud-data-series-part-2/">https://www.criteo.com/insights/best-practices-combating-click-fraud-data-series-part-2/</a>.</li>
+</ul>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2024 <a href="https://blog.lays.pro./">Cyril LAY</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
