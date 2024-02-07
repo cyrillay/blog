@@ -18,9 +18,9 @@
       <link>https://blog.lays.pro./posts/how-to-build-a-rag/</link>
       <pubDate>Tue, 06 Feb 2024 23:09:33 +0100</pubDate>
       <guid>https://blog.lays.pro./posts/how-to-build-a-rag/</guid>
-      <description>Retrieval-augmented generation (RAG) is a technique for enhancing the accuracy, reliability and relevance of generative AI models with facts fetched from internal or external sources.
-Let&amp;rsquo;s dive into building a RAG-based LLM application using publicly available data. This guide walks you through from setup to scaling, with a peek into optimization techniques like reranking and fine-tuning.
-What we&amp;rsquo;ll cover: 💻 Setting up and processing workloads locally. 🚀 Scaling your solution to the cloud effortlessly.</description>
+      <description>This article explains how to customize a large language model for your specific needs.
+There are many approaches to adapt a Large Language Model (LLM) for your data, with the goal of enhancing the responses relevance.
+Prompt engineering : you spend time working on a good prompt, eventually a templated prompt where you can include your data. This is the fastest way, but will also quickly become limited, as the context size (maximum input you can give to a model) is usually in the range of 4 - 16K tokens (3 - 11K words), and it is shared between question and response.</description>
     </item>
     <item>
       <title>Detect Deep Fakes in 30 minutes with Computer Vision</title>
@@ -32,11 +32,12 @@ The Challenge at a Glance The dataset size is a challenge by itself, being a 500
 Approach and Methodology Frame Extraction: Capture a few frames from each video to immediately reduce the dataset size by 90%, and obtain something small to iterate with.</description>
     </item>
     <item>
-      <title>Spark Best Practices</title>
+      <title>Apache Spark Best Practices Megalist</title>
       <link>https://blog.lays.pro./posts/spark-best-practices/</link>
       <pubDate>Mon, 22 May 2017 00:00:00 +0000</pubDate>
       <guid>https://blog.lays.pro./posts/spark-best-practices/</guid>
-      <description> </description>
+      <description>Navigating through the complexities of Apache Spark job optimization can be challenging. Based on recent consulting experiences with various companies, I have compiled a list of best practices for optimizing Apache Spark applications. These strategies have proven to be effective in enhancing performance and cost-efficiency.
+Partitioning Partition wisely: It&amp;rsquo;s important to balance the size of partitions. Avoid too many small partitions (big coordination overhead) and too few large ones (no parallelism).</description>
     </item>
     <item>
       <title>Detecting bot traffic on a webserver</title>

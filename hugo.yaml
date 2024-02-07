@@ -20,10 +20,10 @@ etc."
 
   homeInfoParams:
     Title: "Hi there ! "
-    Content: >
-      👋 Welcome to Lay's blog !
+    Content: |
+      Welcome to Lay's blog ! 👋
 
-      - **Spoiler**: it's not gonna be about chips, but about data and AI. :sunglasses:
+      **Spoiler :**  it's not gonna be about chips, but about data and AI. :sunglasses:
 
   socialIcons:
     - name: github

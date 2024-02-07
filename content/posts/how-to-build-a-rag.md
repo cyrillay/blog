@@ -3,12 +3,36 @@ title = 'Develop a Retrieval Augmented Generation (RAG) LLM Application'
 date = 2024-02-06T23:09:33+01:00
 +++
 
+This article explains how to customize a large language model for your specific needs.
+ 
+There are many approaches to adapt a Large Language Model (LLM) for your data, with the goal of enhancing the responses relevance.
 
-Retrieval-augmented generation (RAG) is a technique for enhancing the accuracy, reliability and relevance of generative AI models with facts fetched from internal or external sources.
+1. Prompt engineering : you spend time working on a good prompt, eventually a templated prompt where you
+can include your data. This is the fastest way, but will also quickly become limited, as the context size 
+(maximum input you can give to a model) is usually in the range of 4 - 16K tokens (3 - 11K words), and it is shared between question
+and response. So you won't be able to include all of your data in the prompt (or you will do so at the expense of the response length)   
 
+2. Fine-tuning : you can take existing models and fine-tune them with your own data. You could use openAI's 
+fine-tuning API (can become expensive if you don't get it right the first time), or fine-tune an open-source model, 
+like mistral, mixtral, llama2. This approach yields great results, but is still expensive in terms of engineering
+resources and computing costs, as one needs to go through model training iteration loops, harder than iterating over a prompt.
+More information on when to fine-tune [here](https://platform.openai.com/docs/guides/fine-tuning/when-to-use-fine-tuning). 
+
+3. Training from scratch : this is so prohibitively expensive that only companies like OpenAI, Meta, Google can afford
+the 1000s of GPUs required to perform what we call the **pretraining** (understand basic language and concepts by learning to predict the next token) 
+
+4. Retrieval Augmented generation (RAG) : it is a good trade off with medium engineering complexity and costs,
+ and high impact on the accuracy and relevance of the augmented model. In a way, it's a bit like prompt engineering on steroids.
+ Let's deep dive into it and see how to make one.
+
+RAG is a technique for enhancing the accuracy, reliability and relevance of generative AI models by giving 
+it ultra relevant facts at query time, previously fetched from internal or external sources and vectorized as embeddings.
+
+Here is how such a system can be built :
+ 
 ![RAG architecture](/rag-archi.png)
 
-Let's dive into building a RAG-based LLM application using publicly available data. This guide walks you through from setup to scaling, with a peek into optimization techniques like reranking and fine-tuning.
+Let's dive into building a RAG-based LLM application using publicly available data. 
 
 ### What we'll cover:
 

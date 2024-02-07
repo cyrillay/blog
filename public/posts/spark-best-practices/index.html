@@ -5,9 +5,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
-<title>Spark Best Practices | Cyril LAY</title>
+<title>Apache Spark Best Practices Megalist | Cyril LAY</title>
 <meta name="keywords" content="">
-<meta name="description" content=" ">
+<meta name="description" content="Navigating through the complexities of Apache Spark job optimization can be challenging. Based on recent consulting experiences with various companies, I have compiled a list of best practices for optimizing Apache Spark applications. These strategies have proven to be effective in enhancing performance and cost-efficiency.
+Partitioning Partition wisely: It&rsquo;s important to balance the size of partitions. Avoid too many small partitions (big coordination overhead) and too few large ones (no parallelism).">
 <meta name="author" content="Cyril LAY">
 <link rel="canonical" href="https://blog.lays.pro./posts/spark-best-practices/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.5ff2630c4d1b3e25bc21f0ecd96681dbcf58219e741fa627857820b5485cb770.css" integrity="sha256-X/JjDE0bPiW8IfDs2WaB289YIZ50H6YnhXggtUhct3A=" rel="preload stylesheet" as="style">
@@ -26,8 +27,9 @@
         }
 
     </style>
-</noscript><meta property="og:title" content="Spark Best Practices" />
-<meta property="og:description" content=" " />
+</noscript><meta property="og:title" content="Apache Spark Best Practices Megalist" />
+<meta property="og:description" content="Navigating through the complexities of Apache Spark job optimization can be challenging. Based on recent consulting experiences with various companies, I have compiled a list of best practices for optimizing Apache Spark applications. These strategies have proven to be effective in enhancing performance and cost-efficiency.
+Partitioning Partition wisely: It&rsquo;s important to balance the size of partitions. Avoid too many small partitions (big coordination overhead) and too few large ones (no parallelism)." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.lays.pro./posts/spark-best-practices/" /><meta property="og:image" content="https://blog.lays.pro./assets/images/mixtral.png"/><meta property="article:section" content="posts" />
 <meta property="article:published_time" content="2017-05-22T00:00:00+00:00" />
@@ -36,8 +38,9 @@
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:image" content="https://blog.lays.pro./assets/images/mixtral.png"/>
 
-<meta name="twitter:title" content="Spark Best Practices"/>
-<meta name="twitter:description" content=" "/>
+<meta name="twitter:title" content="Apache Spark Best Practices Megalist"/>
+<meta name="twitter:description" content="Navigating through the complexities of Apache Spark job optimization can be challenging. Based on recent consulting experiences with various companies, I have compiled a list of best practices for optimizing Apache Spark applications. These strategies have proven to be effective in enhancing performance and cost-efficiency.
+Partitioning Partition wisely: It&rsquo;s important to balance the size of partitions. Avoid too many small partitions (big coordination overhead) and too few large ones (no parallelism)."/>
 
 
 <script type="application/ld+json">
@@ -54,7 +57,7 @@
     {
       "@type": "ListItem",
       "position":  2 ,
-      "name": "Spark Best Practices",
+      "name": "Apache Spark Best Practices Megalist",
       "item": "https://blog.lays.pro./posts/spark-best-practices/"
     }
   ]
@@ -64,14 +67,14 @@
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "Spark Best Practices",
-  "name": "Spark Best Practices",
-  "description": " ",
+  "headline": "Apache Spark Best Practices Megalist",
+  "name": "Apache Spark Best Practices Megalist",
+  "description": "Navigating through the complexities of Apache Spark job optimization can be challenging. Based on recent consulting experiences with various companies, I have compiled a list of best practices for optimizing Apache Spark applications. These strategies have proven to be effective in enhancing performance and cost-efficiency.\nPartitioning Partition wisely: It\u0026rsquo;s important to balance the size of partitions. Avoid too many small partitions (big coordination overhead) and too few large ones (no parallelism).",
   "keywords": [
     
   ],
-  "articleBody": " ",
-  "wordCount" : "0",
+  "articleBody": "Navigating through the complexities of Apache Spark job optimization can be challenging. Based on recent consulting experiences with various companies, I have compiled a list of best practices for optimizing Apache Spark applications. These strategies have proven to be effective in enhancing performance and cost-efficiency.\nPartitioning Partition wisely: It’s important to balance the size of partitions. Avoid too many small partitions (big coordination overhead) and too few large ones (no parallelism). Utilize .repartition() to get evenly sized partitions at the expense of a full shuffle, or .coalesce() to reduce shuffles at the risk of partition size imbalance. Consider partitioning by key: For expensive filtering/grouping operations on specific columns (like a date or country), previously partitioning by these keys can be speed up the job, but beware of data skewness and partitions size. Reevaluate partitions after filtering: Since filtering can alter partition sizes by reducing data volume, consider repartitioning to maintain optimal partition size. Partition size: Starting with the default size of 128MB is a advisable. For further optimization, aim for a partition count equal to four times the cluster’s core count (e.g., a cluster with 5 nodes and 16 cores would suggest 320 partitions). Ensure partitions are of a substantial size (tens of MBs at a minimum). Files \u0026 formats Opt for efficient storage formats like Parquet or Delta over CSV, JSON, or text. Avoid creating small files problems, prefer fewer large files (1 GB is okay) rather than many small ones. Coding Practices Shuffling is resource-intensive, as it requires serialization and deserialization, and a transfer over the network. Try to structure your operations to minimize shuffling. Scala users should prefer the Dataset API over RDDs, while PySpark users should stick to the DataFrame API. Native Functions Over UDFs: Whenever possible, use Spark’s built-in functions instead of user-defined functions (UDFs). Checkpointing: Use .cache() to save computation time for reused data transformation segments. Cost Optimization Monitor resource: Keep an eye on hardware resources, targeting 75-80% cluster utilization for optimal cost/performance. From experience, it’s hard to have a bigger percentage, and you’ll run into OOM issues as other system processes also need resources. If you have less than that, you’re probably waisting some money. Leverage solutions like Elastigroup to reduce cloud expenses. They offer affordable spot instances and use predictive rebalancing to mitigate the risks associated with spot instance interruptions. Conclusion Keep in mind that lots of these advices are empirical, and can work in some environments, less in others depending on many factors (cloud provider, spark versions, hardware, number and config of the nodes…).\nIf your spark job is critical, spend time in testing and measuring what works for you.\n",
+  "wordCount" : "439",
   "inLanguage": "en",
   "datePublished": "2017-05-22T00:00:00Z",
   "dateModified": "2017-05-22T00:00:00Z",
@@ -114,14 +117,56 @@
   <header class="post-header">
     
     <h1 class="post-title entry-hint-parent">
-      Spark Best Practices
+      Apache Spark Best Practices Megalist
     </h1>
     <div class="post-meta"><span title='2017-05-22 00:00:00 +0000 UTC'>May 22, 2017</span>&nbsp;·&nbsp;Cyril LAY
 
 </div>
   </header> 
-  <div class="post-content"><p><img loading="lazy" src="/advanced-spark-caching.png" alt="test"  />
-</p>
+  <div class="post-content"><p>Navigating through the complexities of Apache Spark job optimization can be challenging.
+Based on recent consulting experiences with various companies, I have
+compiled a list of best practices for optimizing Apache Spark applications. These strategies have
+proven to be effective in enhancing performance and cost-efficiency.</p>
+<h3 id="partitioning">Partitioning<a hidden class="anchor" aria-hidden="true" href="#partitioning">#</a></h3>
+<ul>
+<li><strong>Partition wisely:</strong> It&rsquo;s important to balance the size of partitions. Avoid too many small partitions (big coordination overhead) and too few large ones
+(no parallelism). Utilize <code>.repartition()</code> to get evenly sized partitions at the expense of a full shuffle,
+or <code>.coalesce()</code> to reduce shuffles at the risk of partition size imbalance.</li>
+<li><strong>Consider partitioning by key:</strong> For expensive filtering/grouping operations on specific columns (like a <code>date</code> or <code>country</code>),
+previously partitioning by these keys can be speed up the job, but beware of data skewness and partitions size.</li>
+<li><strong>Reevaluate partitions after filtering:</strong> Since filtering can alter partition sizes by reducing data volume,
+consider repartitioning to maintain optimal partition size.</li>
+<li><strong>Partition size:</strong> Starting with the default size of 128MB is a advisable. For further optimization,
+aim for a partition count equal to four times the cluster&rsquo;s core count (e.g., a cluster with 5 nodes and
+16 cores would suggest 320 partitions). Ensure partitions are of a substantial size (tens of MBs at a minimum).</li>
+</ul>
+<h3 id="files--formats">Files &amp; formats<a hidden class="anchor" aria-hidden="true" href="#files--formats">#</a></h3>
+<ul>
+<li>Opt for efficient storage formats like <strong>Parquet</strong> or Delta over CSV, JSON, or text.</li>
+<li>Avoid creating small files problems, prefer fewer large files (1 GB is okay) rather than many small ones.</li>
+</ul>
+<h3 id="coding-practices">Coding Practices<a hidden class="anchor" aria-hidden="true" href="#coding-practices">#</a></h3>
+<ul>
+<li>Shuffling is resource-intensive, as it requires serialization and deserialization, and a transfer over the network.
+Try to structure your operations to <strong>minimize shuffling</strong>.</li>
+<li>Scala users should prefer the <strong>Dataset</strong> API over RDDs, while PySpark users should stick to the <strong>DataFrame</strong> API.</li>
+<li><strong>Native Functions Over UDFs:</strong> Whenever possible, use Spark&rsquo;s built-in functions instead of user-defined functions (UDFs).</li>
+<li><strong>Checkpointing:</strong> Use <code>.cache()</code> to save computation time for reused data transformation segments.
+<img loading="lazy" src="/advanced-spark-caching.png" alt="spark caching example"  />
+</li>
+</ul>
+<h3 id="cost-optimization">Cost Optimization<a hidden class="anchor" aria-hidden="true" href="#cost-optimization">#</a></h3>
+<ul>
+<li><strong>Monitor resource:</strong> Keep an eye on hardware resources, targeting 75-80% cluster utilization for optimal cost/performance.
+From experience, it&rsquo;s hard to have a bigger percentage, and you&rsquo;ll run into OOM issues as other system processes also need resources.
+If you have less than that, you&rsquo;re probably waisting some money.</li>
+<li>Leverage solutions like <a href="https://spot.io/product/elastigroup/">Elastigroup</a> to <strong>reduce cloud expenses</strong>.
+They offer affordable spot instances and use predictive rebalancing to mitigate the risks associated with spot instance interruptions.</li>
+</ul>
+<h3 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h3>
+<p>Keep in mind that lots of these advices are empirical, and can work in some environments, less in others depending
+on many factors (cloud provider, spark versions, hardware, number and config of the nodes…).</p>
+<p>If your spark job is critical, spend time in testing and measuring what works for you.</p>
 
 
   </div>
