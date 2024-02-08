@@ -3,12 +3,15 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://blog.lays.pro./</loc>
-    <lastmod>2024-02-06T23:09:33+01:00</lastmod>
+    <lastmod>2024-02-08T16:34:28+01:00</lastmod>
   </url><url>
-    <loc>https://blog.lays.pro./posts/how-to-build-a-rag/</loc>
-    <lastmod>2024-02-06T23:09:33+01:00</lastmod>
+    <loc>https://blog.lays.pro./posts/building-a-rag-part-1/</loc>
+    <lastmod>2024-02-08T16:34:28+01:00</lastmod>
   </url><url>
     <loc>https://blog.lays.pro./posts/</loc>
+    <lastmod>2024-02-08T16:34:28+01:00</lastmod>
+  </url><url>
+    <loc>https://blog.lays.pro./posts/how-to-build-a-rag/</loc>
     <lastmod>2024-02-06T23:09:33+01:00</lastmod>
   </url><url>
     <loc>https://blog.lays.pro./posts/deep-fake-detection/</loc>
