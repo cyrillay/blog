@@ -1,5 +1,5 @@
 +++
-title = 'Journey into Building a Custom RAG Augmented LLM Application (Day 1)'
+title = 'Journey into building a custom RAG (Day 1)'
 date = 2024-02-08T16:34:28+01:00
 +++
 

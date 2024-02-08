@@ -76,8 +76,8 @@ Prompt engineering : you spend time working on a good prompt, eventually a templ
   "keywords": [
     
   ],
-  "articleBody": "This article explains how to customize a large language model for your specific needs.\nThere are many approaches to adapt a Large Language Model (LLM) for your data, with the goal of enhancing the responses relevance.\nPrompt engineering : you spend time working on a good prompt, eventually a templated prompt where you can include your data. This is the fastest way, but will also quickly become limited, as the context size (maximum input you can give to a model) is usually in the range of 4 - 16K tokens (3 - 11K words), and it is shared between question and response. So you won’t be able to include all of your data in the prompt (or you will do so at the expense of the response length)\nFine-tuning : you can take existing models and fine-tune them with your own data. You could use openAI’s fine-tuning API (can become expensive if you don’t get it right the first time), or fine-tune an open-source model, like mistral, mixtral, llama2. This approach yields great results, but is still expensive in terms of engineering resources and computing costs, as one needs to go through model training iteration loops, harder than iterating over a prompt. More information on when to fine-tune here.\nTraining from scratch : this is so prohibitively expensive that only companies like OpenAI, Meta, Google can afford the 1000s of GPUs required to perform what we call the pretraining (understand basic language and concepts by learning to predict the next token)\nRetrieval Augmented generation (RAG) : it is a good trade off with medium engineering complexity and costs, and high impact on the accuracy and relevance of the augmented model. In a way, it’s a bit like prompt engineering on steroids. Let’s deep dive into it and see how to make one.\nRAG is a technique for enhancing the accuracy, reliability and relevance of generative AI models by giving it ultra relevant facts at query time, previously fetched from internal or external sources and vectorized as embeddings.\nHere is how such a system can be built :\nLet’s dive into building a RAG-based LLM application using publicly available data.\nWhat we’ll cover: 💻 Setting up and processing workloads locally. 🚀 Scaling your solution to the cloud effortlessly. 💡 Enhancing performance with reranking, fine-tuning, and prompt engineering. Steps 1. Get the data Start by gathering data from public sources. For this project, we aim for a structure like this:\n| url | section | text | | --- | ------- | ---- | | https://example.com | Introduction | \"Here's how to start with LLM...\" | | https://example.com | Getting Data | \"Data is crucial for training LLMs...\" | | https://example.com | Training | \"To train your model, begin with...\" | Future articles will delve into using internal/proprietary databases.\n2. Preprocess the data Normalize data by chunking larger sections and combining smaller ones. Here’s a simple Python snippet to chunk text data:\nfrom textwrap import wrap def chunk_text(text, chunk_size=512): return wrap(text, chunk_size) # Example usage chunked_section = chunk_text(long_text_section) 3. Transform text data to embeddings Embeddings turn text into a numerical format that’s understandable by LLMs. We’ll use the Instructor👨‍🏫 model for its performance:\nfrom sentence_transformers import SentenceTransformer model = SentenceTransformer('hkunlp/instructor-large') def embed_text(text): return model.encode(text) # Example usage embedded_text = embed_text(\"Your text here\") Note: While we start with embeddings for efficiency, exploring LLMs for the top k chunks and reranking with tools like Cohere Rerank could further refine relevance.\n4. Store the data in a vectorDB We’ll use pgvector for storage. Here’s how to set it up with PostgreSQL:\nCREATE EXTENSION pgvector; CREATE TABLE documents (id SERIAL PRIMARY KEY, text_vector vector(512)); And inserting data:\nimport psycopg2 # Connect to your PostgreSQL database conn = psycopg2.connect(\"dbname=your_db user=your_user\") cur = conn.cursor() # Insert the embedded text cur.execute(\"INSERT INTO documents (text_vector) VALUES (vector(%s))\", (embedded_text,)) conn.commit() 5. Perform inference For inference, we retrieve relevant documents, optionally rerank them, and compile a contextual prompt:\ndef query_vector_db(query_embedding, top_k=5): # Query the top_k most similar vectors cur.execute(\"SELECT id, text_vector \u003c-\u003e vector(%s) AS distance FROM documents ORDER BY distance ASC LIMIT %s\", (query_embedding, top_k)) return cur.fetchall() # Example: embedding a query and retrieving related documents query_embedding = embed_text(\"Your query here\") related_documents = query_vector_db(query_embedding) Conclusion Building a RAG-based LLM from scratch teaches you the nuts and bolts of modern NLP applications, from data preprocessing to deploying scalable solutions. This guide is just the beginning; stay tuned for more in-depth exploration of fine-tuning and prompt engineering techniques.\n",
-  "wordCount" : "744",
+  "articleBody": "This article explains how to customize a large language model for your specific needs.\nThere are many approaches to adapt a Large Language Model (LLM) for your data, with the goal of enhancing the responses relevance.\nPrompt engineering : you spend time working on a good prompt, eventually a templated prompt where you can include your data. This is the fastest way, but will also quickly become limited, as the context size (maximum input you can give to a model) is usually in the range of 4 - 16K tokens (3 - 11K words), and it is shared between question and response. So you won’t be able to include all of your data in the prompt (or you will do so at the expense of the response length)\nFine-tuning : you can take existing models and fine-tune them with your own data. You could use openAI’s fine-tuning API (can become expensive if you don’t get it right the first time), or fine-tune an open-source model, like mistral, mixtral, llama2. This approach yields great results, but is still expensive in terms of engineering resources and computing costs, as one needs to go through model training iteration loops, harder than iterating over a prompt. More information on when to fine-tune here.\nTraining from scratch : this is so prohibitively expensive that only companies like OpenAI, Meta, Google can afford the 1000s of GPUs required to perform what we call the pretraining (understand basic language and concepts by learning to predict the next token)\nRetrieval Augmented generation (RAG) : it is a good trade off with medium engineering complexity and costs, and high impact on the accuracy and relevance of the augmented model. In a way, it’s a bit like prompt engineering on steroids. Let’s deep dive into it and see how to make one.\nRAG is a technique for enhancing the accuracy, reliability and relevance of generative AI models by giving it ultra relevant facts at query time, previously fetched from internal or external sources and vectorized as embeddings.\nHere is how such a system can be built :\nLet’s dive into building a RAG-based LLM application using publicly available data.\nWhat we’ll cover: 💻 Setting up and processing workloads locally. 🚀 Scaling your solution to the cloud effortlessly. 💡 Enhancing performance with reranking, fine-tuning, and prompt engineering. Steps 1. Get the data Start by gathering data from public sources. For this project, we want to use web resources, this means crawling a web page (make sure the license allows it !) and collect a dataset like below.\nurl section text https://huggingface.co/docs/trl Introduction “Here’s how to start with LLM…” https://huggingface.co/docs/trl Getting Data “Data is crucial for training LLMs…” https://docs.metaflow.org/api/client Training “To train your model, begin with…” … … … text should be about 1000 characters.\nFuture articles will delve into using internal/proprietary databases.\n2. Preprocess the data You’re probably gonna get a dirty dataset, with many lines without any content, or a very limited content. Add columns to your dataframe for the word count, to perform basic filtering and remove rows without info :\ndf = df[df.word_count \u003e 15] df = df[df.char_count \u003e 50] 3. Transform text data to embeddings Embeddings turn text into a numerical vectors that are understandable by LLMs.\nWe’ll use LLamaIndex for embedding and storing the vectors, so that’s where you select the model you want to use. We’ll use openAI’s text-embedding-3-small which is cheap (1$ = 10K pages of text embedded) and efficient.\nfrom llama_index import ServiceContext, set_global_service_context, VectorStoreIndex set_global_service_context( ServiceContext.from_defaults(llm=\"gpt-3.5-turbo\", embed_model='text-embedding-3-small') ) Note: While we start with embeddings only for efficiency, adding a reranking model would further refine relevance. We’ll do it as a next step\n4. Store the data in a vectorDB We’ll use pgvector for storing our embeddings. Here’s how to set it up with PostgreSQL:\nCREATE EXTENSION pgvector; CREATE TABLE document ( id serial primary key, \"text\" text not null, source text not null, embedding vector(1024) ); And inserting your embedded vectors :\nfrom llama_index.indices.vector_store import VectorStoreIndex from llama_index.vector_stores import PGVectorStore vector_store = PGVectorStore.from_params( database=, host=, password=, port=, user=, table_name=\"document\", embed_dim=1536, # openai embedding dimension ) storage_context = StorageContext.from_defaults(vector_store=vector_store) index = VectorStoreIndex.from_documents( df, storage_context=storage_context, show_progress=True ) 5. Perform inference For inference, we need to :\nembed the user query (like we did for the documentation) use it on the vectorDB to retrieve relevant documents optionally rerank them with a reranker Compile a contextual prompt Note : we could also use LLamaIndex for those parts\ndef query_vector_db(query_embedding, top_k=5): # Query the top_k most similar vectors cur.execute(\"SELECT * FROM document ORDER BY embedding \u003c-\u003e %s LIMIT %s\", (query_embedding, top_k)) return cur.fetchall() query = \"How to fine-tune a mistral LLM with DPO ?\" query_embedding = openai.OpenAI().embeddings.create(input = query, model=\"text-embedding-3-small\").data[0].embedding related_documents = query_vector_db(query_embedding) # optional : rerank here Compile a prompt :\nprompt = f\"\"\" Answer this question using your existing knowledge and the relevant context below: ${related_documents[:3]} If the context doesn't help you answer, prefix your message with: \"Context not relevant.\" If the context is empty, prefix your message with: \"No context.\" If you don't know the answer and the context doesn't help you, say \"I don't know\". The question is : ${query} \"\"\" And finally send it to your LLM :\nfrom openai import OpenAI; client = OpenAI() stream = client.chat.completions.create( model=\"gpt-4\", messages=[{\"role\": \"user\", \"content\": prompt}], stream=True, ) for chunk in stream: if chunk.choices[0].delta.content is not None: print(chunk.choices[0].delta.content, end=\"\") Conclusion Building a RAG-based LLM from scratch teaches you the nuts and bolts of modern NLP applications, from data preprocessing to deploying scalable solutions. This guide is just the beginning; stay tuned for more in-depth exploration of RAG and fine-tuning techniques.\nTODO Homogenize between LlamaIndex or by hand ",
+  "wordCount" : "942",
   "inLanguage": "en",
   "datePublished": "2024-02-06T23:09:33+01:00",
   "dateModified": "2024-02-06T23:09:33+01:00",
@@ -166,62 +166,136 @@ it ultra relevant facts at query time, previously fetched from internal or exter
 </ul>
 <h3 id="steps">Steps<a hidden class="anchor" aria-hidden="true" href="#steps">#</a></h3>
 <h4 id="1-get-the-data">1. Get the data<a hidden class="anchor" aria-hidden="true" href="#1-get-the-data">#</a></h4>
-<p>Start by gathering data from public sources. For this project, we aim for a structure like this:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-markdown" data-lang="markdown"><span style="display:flex;"><span>| url | section | text |
-</span></span><span style="display:flex;"><span>| --- | ------- | ---- |
-</span></span><span style="display:flex;"><span>| https://example.com | Introduction | &#34;Here&#39;s how to start with LLM...&#34; |
-</span></span><span style="display:flex;"><span>| https://example.com | Getting Data | &#34;Data is crucial for training LLMs...&#34; |
-</span></span><span style="display:flex;"><span>| https://example.com | Training | &#34;To train your model, begin with...&#34; |
-</span></span></code></pre></div><p>Future articles will delve into using internal/proprietary databases.</p>
+<p>Start by gathering data from public sources. For this project, we want to use web resources, this means
+crawling a web page (make sure the license allows it !) and collect a dataset like below.</p>
+<table>
+<thead>
+<tr>
+<th>url</th>
+<th>section</th>
+<th>text</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://huggingface.co/docs/trl">https://huggingface.co/docs/trl</a></td>
+<td>Introduction</td>
+<td>&ldquo;Here&rsquo;s how to start with LLM&hellip;&rdquo;</td>
+</tr>
+<tr>
+<td><a href="https://huggingface.co/docs/trl">https://huggingface.co/docs/trl</a></td>
+<td>Getting Data</td>
+<td>&ldquo;Data is crucial for training LLMs&hellip;&rdquo;</td>
+</tr>
+<tr>
+<td><a href="https://docs.metaflow.org/api/client">https://docs.metaflow.org/api/client</a></td>
+<td>Training</td>
+<td>&ldquo;To train your model, begin with&hellip;&rdquo;</td>
+</tr>
+<tr>
+<td>&hellip;</td>
+<td>&hellip;</td>
+<td>&hellip;</td>
+</tr>
+</tbody>
+</table>
+<p><code>text</code> should be about 1000 characters.</p>
+<p>Future articles will delve into using internal/proprietary databases.</p>
 <h4 id="2-preprocess-the-data">2. Preprocess the data<a hidden class="anchor" aria-hidden="true" href="#2-preprocess-the-data">#</a></h4>
-<p>Normalize data by chunking larger sections and combining smaller ones. Here’s a simple Python snippet to chunk text data:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> textwrap <span style="color:#f92672">import</span> wrap
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">chunk_text</span>(text, chunk_size<span style="color:#f92672">=</span><span style="color:#ae81ff">512</span>):
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> wrap(text, chunk_size)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Example usage</span>
-</span></span><span style="display:flex;"><span>chunked_section <span style="color:#f92672">=</span> chunk_text(long_text_section)
+<p>You&rsquo;re probably gonna get a dirty dataset, with many lines without any content, or a very limited content.
+Add columns to your dataframe for the word count, to perform basic filtering and remove rows without info :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>df <span style="color:#f92672">=</span> df[df<span style="color:#f92672">.</span>word_count <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">15</span>]
+</span></span><span style="display:flex;"><span>df <span style="color:#f92672">=</span> df[df<span style="color:#f92672">.</span>char_count <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">50</span>]
 </span></span></code></pre></div><h4 id="3-transform-text-data-to-embeddings">3. Transform text data to embeddings<a hidden class="anchor" aria-hidden="true" href="#3-transform-text-data-to-embeddings">#</a></h4>
-<p>Embeddings turn text into a numerical format that&rsquo;s understandable by LLMs. We&rsquo;ll use the Instructor👨‍🏫 model for its performance:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> sentence_transformers <span style="color:#f92672">import</span> SentenceTransformer
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>model <span style="color:#f92672">=</span> SentenceTransformer(<span style="color:#e6db74">&#39;hkunlp/instructor-large&#39;</span>)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">embed_text</span>(text):
-</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> model<span style="color:#f92672">.</span>encode(text)
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Example usage</span>
-</span></span><span style="display:flex;"><span>embedded_text <span style="color:#f92672">=</span> embed_text(<span style="color:#e6db74">&#34;Your text here&#34;</span>)
+<p>Embeddings turn text into a numerical vectors that are understandable by LLMs.</p>
+<p>We&rsquo;ll use LLamaIndex for embedding and storing the vectors, so that&rsquo;s where you select the model you want to use. We&rsquo;ll use openAI&rsquo;s
+<code>text-embedding-3-small</code> which is cheap (1$ = 10K pages of text embedded) and efficient.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> llama_index <span style="color:#f92672">import</span> ServiceContext, set_global_service_context, VectorStoreIndex
+</span></span><span style="display:flex;"><span>set_global_service_context(
+</span></span><span style="display:flex;"><span>    ServiceContext<span style="color:#f92672">.</span>from_defaults(llm<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;gpt-3.5-turbo&#34;</span>, embed_model<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;text-embedding-3-small&#39;</span>)
+</span></span><span style="display:flex;"><span>)
 </span></span></code></pre></div><blockquote>
-<p><strong>Note:</strong> While we start with embeddings for efficiency, exploring LLMs for the top k chunks and reranking with tools like Cohere Rerank could further refine relevance.</p>
+<p><strong>Note:</strong> While we start with embeddings only for efficiency,
+adding a <a href="https://blog.llamaindex.ai/boosting-rag-picking-the-best-embedding-reranker-models-42d079022e83">reranking model</a>
+would further refine relevance. We&rsquo;ll do it as a next step</p>
 </blockquote>
 <h4 id="4-store-the-data-in-a-vectordb">4. Store the data in a vectorDB<a hidden class="anchor" aria-hidden="true" href="#4-store-the-data-in-a-vectordb">#</a></h4>
-<p>We&rsquo;ll use pgvector for storage. Here’s how to set it up with PostgreSQL:</p>
+<p>We&rsquo;ll use <a href="https://github.com/pgvector/pgvector">pgvector</a> for storing our embeddings.
+Here’s how to set it up with PostgreSQL:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sql" data-lang="sql"><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> EXTENSION pgvector;
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> documents (id SERIAL <span style="color:#66d9ef">PRIMARY</span> <span style="color:#66d9ef">KEY</span>, text_vector vector(<span style="color:#ae81ff">512</span>));
-</span></span></code></pre></div><p>And inserting data:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">import</span> psycopg2
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Connect to your PostgreSQL database</span>
-</span></span><span style="display:flex;"><span>conn <span style="color:#f92672">=</span> psycopg2<span style="color:#f92672">.</span>connect(<span style="color:#e6db74">&#34;dbname=your_db user=your_user&#34;</span>)
-</span></span><span style="display:flex;"><span>cur <span style="color:#f92672">=</span> conn<span style="color:#f92672">.</span>cursor()
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">CREATE</span> <span style="color:#66d9ef">TABLE</span> document (
+</span></span><span style="display:flex;"><span>    id serial <span style="color:#66d9ef">primary</span> <span style="color:#66d9ef">key</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;text&#34;</span> text <span style="color:#66d9ef">not</span> <span style="color:#66d9ef">null</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">source</span> text <span style="color:#66d9ef">not</span> <span style="color:#66d9ef">null</span>,
+</span></span><span style="display:flex;"><span>    embedding vector(<span style="color:#ae81ff">1024</span>)
+</span></span><span style="display:flex;"><span>);
+</span></span></code></pre></div><p>And inserting your embedded vectors :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> llama_index.indices.vector_store <span style="color:#f92672">import</span> VectorStoreIndex
+</span></span><span style="display:flex;"><span><span style="color:#f92672">from</span> llama_index.vector_stores <span style="color:#f92672">import</span> PGVectorStore
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Insert the embedded text</span>
-</span></span><span style="display:flex;"><span>cur<span style="color:#f92672">.</span>execute(<span style="color:#e6db74">&#34;INSERT INTO documents (text_vector) VALUES (vector(</span><span style="color:#e6db74">%s</span><span style="color:#e6db74">))&#34;</span>, (embedded_text,))
-</span></span><span style="display:flex;"><span>conn<span style="color:#f92672">.</span>commit()
+</span></span><span style="display:flex;"><span>vector_store <span style="color:#f92672">=</span> PGVectorStore<span style="color:#f92672">.</span>from_params(
+</span></span><span style="display:flex;"><span>    database<span style="color:#f92672">=</span>,
+</span></span><span style="display:flex;"><span>    host<span style="color:#f92672">=</span>,
+</span></span><span style="display:flex;"><span>    password<span style="color:#f92672">=</span>,
+</span></span><span style="display:flex;"><span>    port<span style="color:#f92672">=</span>,
+</span></span><span style="display:flex;"><span>    user<span style="color:#f92672">=</span>,
+</span></span><span style="display:flex;"><span>    table_name<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;document&#34;</span>,
+</span></span><span style="display:flex;"><span>    embed_dim<span style="color:#f92672">=</span><span style="color:#ae81ff">1536</span>,  <span style="color:#75715e"># openai embedding dimension</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>storage_context <span style="color:#f92672">=</span> StorageContext<span style="color:#f92672">.</span>from_defaults(vector_store<span style="color:#f92672">=</span>vector_store)
+</span></span><span style="display:flex;"><span>index <span style="color:#f92672">=</span> VectorStoreIndex<span style="color:#f92672">.</span>from_documents(
+</span></span><span style="display:flex;"><span>    df, storage_context<span style="color:#f92672">=</span>storage_context, show_progress<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>
+</span></span><span style="display:flex;"><span>)
 </span></span></code></pre></div><h4 id="5-perform-inference">5. Perform inference<a hidden class="anchor" aria-hidden="true" href="#5-perform-inference">#</a></h4>
-<p>For inference, we retrieve relevant documents, optionally rerank them, and compile a contextual prompt:</p>
+<p>For inference, we need to :</p>
+<ul>
+<li>embed the user query (like we did for the documentation)</li>
+<li>use it on the vectorDB to retrieve relevant documents</li>
+<li>optionally rerank them with a reranker</li>
+<li>Compile a contextual prompt</li>
+</ul>
+<p>Note : we could also use LLamaIndex for those parts</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">query_vector_db</span>(query_embedding, top_k<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>):
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Query the top_k most similar vectors</span>
-</span></span><span style="display:flex;"><span>    cur<span style="color:#f92672">.</span>execute(<span style="color:#e6db74">&#34;SELECT id, text_vector &lt;-&gt; vector(</span><span style="color:#e6db74">%s</span><span style="color:#e6db74">) AS distance FROM documents ORDER BY distance ASC LIMIT </span><span style="color:#e6db74">%s</span><span style="color:#e6db74">&#34;</span>, (query_embedding, top_k))
+</span></span><span style="display:flex;"><span>    cur<span style="color:#f92672">.</span>execute(<span style="color:#e6db74">&#34;SELECT * FROM document ORDER BY embedding &lt;-&gt; </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> LIMIT </span><span style="color:#e6db74">%s</span><span style="color:#e6db74">&#34;</span>, (query_embedding, top_k))
 </span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> cur<span style="color:#f92672">.</span>fetchall()
 </span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Example: embedding a query and retrieving related documents</span>
-</span></span><span style="display:flex;"><span>query_embedding <span style="color:#f92672">=</span> embed_text(<span style="color:#e6db74">&#34;Your query here&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>query <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;How to fine-tune a mistral LLM with DPO ?&#34;</span>
+</span></span><span style="display:flex;"><span>query_embedding <span style="color:#f92672">=</span> openai<span style="color:#f92672">.</span>OpenAI()<span style="color:#f92672">.</span>embeddings<span style="color:#f92672">.</span>create(input <span style="color:#f92672">=</span> query, model<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text-embedding-3-small&#34;</span>)<span style="color:#f92672">.</span>data[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>embedding
 </span></span><span style="display:flex;"><span>related_documents <span style="color:#f92672">=</span> query_vector_db(query_embedding)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># optional : rerank here</span>
+</span></span></code></pre></div><p>Compile a prompt :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>prompt <span style="color:#f92672">=</span> <span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Answer this question using your existing knowledge and the relevant context below: $</span><span style="color:#e6db74">{</span>related_documents[:<span style="color:#ae81ff">3</span>]<span style="color:#e6db74">}</span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    If the context doesn&#39;t help you answer, prefix your message with: &#34;Context not relevant.&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    If the context is empty, prefix your message with: &#34;No context.&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    If you don&#39;t know the answer and the context doesn&#39;t help you, say &#34;I don&#39;t know&#34;.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    The question is : $</span><span style="color:#e6db74">{</span>query<span style="color:#e6db74">}</span><span style="color:#e6db74">
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;&#34;&#34;</span>
+</span></span></code></pre></div><p>And finally send it to your LLM :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#f92672">from</span> openai <span style="color:#f92672">import</span> OpenAI; client <span style="color:#f92672">=</span> OpenAI()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>stream <span style="color:#f92672">=</span> client<span style="color:#f92672">.</span>chat<span style="color:#f92672">.</span>completions<span style="color:#f92672">.</span>create(
+</span></span><span style="display:flex;"><span>    model<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;gpt-4&#34;</span>,
+</span></span><span style="display:flex;"><span>    messages<span style="color:#f92672">=</span>[{<span style="color:#e6db74">&#34;role&#34;</span>: <span style="color:#e6db74">&#34;user&#34;</span>, <span style="color:#e6db74">&#34;content&#34;</span>: prompt}],
+</span></span><span style="display:flex;"><span>    stream<span style="color:#f92672">=</span><span style="color:#66d9ef">True</span>,
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">for</span> chunk <span style="color:#f92672">in</span> stream:
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> chunk<span style="color:#f92672">.</span>choices[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>delta<span style="color:#f92672">.</span>content <span style="color:#f92672">is</span> <span style="color:#f92672">not</span> <span style="color:#66d9ef">None</span>:
+</span></span><span style="display:flex;"><span>        print(chunk<span style="color:#f92672">.</span>choices[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>delta<span style="color:#f92672">.</span>content, end<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;&#34;</span>)
 </span></span></code></pre></div><h3 id="conclusion">Conclusion<a hidden class="anchor" aria-hidden="true" href="#conclusion">#</a></h3>
-<p>Building a RAG-based LLM from scratch teaches you the nuts and bolts of modern NLP applications, from data preprocessing to deploying scalable solutions. This guide is just the beginning; stay tuned for more in-depth exploration of fine-tuning and prompt engineering techniques.</p>
+<p>Building a RAG-based LLM from scratch teaches you the nuts and bolts of modern NLP applications,
+from data preprocessing to deploying scalable solutions.
+This guide is just the beginning; stay tuned for more in-depth exploration of RAG and fine-tuning techniques.</p>
+<h3 id="todo">TODO<a hidden class="anchor" aria-hidden="true" href="#todo">#</a></h3>
+<ul>
+<li>Homogenize between LlamaIndex or by hand</li>
+</ul>
 
 
   </div>
