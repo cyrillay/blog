@@ -19,8 +19,11 @@ I am currently building a [RAG (Retrieval Augmented Generation)](https://blog.la
 - I replicated what was done on Metaflow’s blog, augmented with Metaflow’s docs. 
 Now, I want to do one with Hugging Face’s docs as well, focusing on three libraries: [transformers](https://huggingface.co/docs/transformers/index), 
 [accelerate](https://huggingface.co/docs/accelerate), [TRL](https://huggingface.co/docs/trl/) (Transfer Reinforcement Learning).
-- It works, but, the quality of responses about Hugging Face isn't as good as Metaflow's.
+- It works, but, it's not amazing for now : 
 
+![rag-q1](/rag-q1.png)
+![rag-q2](/rag-q2.png)
+![rag-q3](/rag-q3.png)
 
 <!-- TODO: include screenshot of current responses -->
 
@@ -36,7 +39,8 @@ more performant : double win. Let's use it :
 
 ```python
 from llama_index import ServiceContext, set_global_service_context
-ServiceContext.from_defaults(llm="gpt-3.5-turbo", embed_model='text-embedding-3-small')
+from llama_index.llms import OpenAI
+ServiceContext.from_defaults(llm="gpt-3.5-turbo", embed_model=OpenAIEmbedding(model='text-embedding-3-small'))
 set_global_service_context(service_context)
 ```
 
@@ -46,7 +50,7 @@ at the time of writing is `BAAI/bge-large-en-v1.5`. You must tell LLamaIndex tha
 ServiceContext.from_defaults(llm="gpt-3.5-turbo", embed_model='local:BAAI/bge-large-en-v1.5')
 ```
 
-I kept the model as GPT-3.5 for now, as it's cheaper, and I’m mostly testing the relevance of the context augmentation at this stage, not the model itself.
+I kept the LLM as GPT-3.5 for now, as it's cheaper, and I’m mostly testing the relevance of the context augmentation at this stage, not the model itself.
 
 While doing this modification, I found the prompt used in the initial RAG repo. 
 
