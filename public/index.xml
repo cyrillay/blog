@@ -11,8 +11,17 @@
     </image>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 08 Feb 2024 16:34:28 +0100</lastBuildDate>
+    <lastBuildDate>Fri, 09 Feb 2024 01:23:06 +0100</lastBuildDate>
     <atom:link href="https://blog.lays.pro./index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Journey into building a custom RAG (Day 2)</title>
+      <link>https://blog.lays.pro./posts/building-a-rag-part-2/</link>
+      <pubDate>Fri, 09 Feb 2024 01:23:06 +0100</pubDate>
+      <guid>https://blog.lays.pro./posts/building-a-rag-part-2/</guid>
+      <description>Now, I want to check if the context is well retrieved. I did an experiment where I took one part of huggingface TRL library that is supposed to be included in my embeddings, regarding DPO:
+I asked my model questions about DPO, but it wouldn&amp;rsquo;t get them right, it seems like he didn&amp;rsquo;t get it in its context.
+Thanks to my metaflow pipeline I could access the dataframe containing the data before embedding and indexing (Flow.</description>
+    </item>
     <item>
       <title>Journey into building a custom RAG (Day 1)</title>
       <link>https://blog.lays.pro./posts/building-a-rag-part-1/</link>

@@ -78,6 +78,12 @@ prompt = """
 """
 ```
 
+It actually helped me later, I found out randomly that my context retrieval wasn't working so good 😂 (or that I trained on the 
+wrong data) : 
+![](/prompt-gazpacho.png)
+Found in [HF docs](https://huggingface.co/docs/transformers/main/tasks/prompting) :
+![](/hf-docs-gazpacho.png)
+
 ### Next Steps
 
 - Check if embeddings are saved between runs and see what's the default strategy when iterating on the pipeline
