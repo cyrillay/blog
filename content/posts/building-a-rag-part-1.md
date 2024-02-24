@@ -11,8 +11,7 @@ I am currently building a [RAG (Retrieval Augmented Generation)](https://blog.la
  [Metaflow RAG demo repository](https://github.com/outerbounds/rag-demo) and this
  [anyScale blog post](https://www.anyscale.com/blog/a-comprehensive-guide-for-building-rag-based-llm-applications-part-1)
  for insights and second point of view.
- Metaflow's repo include a streamlit chat webapp, utilities for scraping and parsing markdown documentation files,
-  tools to retrieve embedded documents to augment the user prompt, etc.
+ Metaflow's repo include a streamlit chat webapp, utilities for scraping and parsing markdown documentation files, etc.
 
 ### Current Status
 
@@ -24,9 +23,6 @@ Now, I want to do one with Hugging Face’s docs as well, focusing on three libr
 ![rag-q1](/rag-q1.png)
 ![rag-q2](/rag-q2.png)
 ![rag-q3](/rag-q3.png)
-
-<!-- TODO: include screenshot of current responses -->
-
 
 ### Make iteration cycles cheap
 

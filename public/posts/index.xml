@@ -11,16 +11,26 @@
     </image>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 09 Feb 2024 01:23:06 +0100</lastBuildDate>
+    <lastBuildDate>Mon, 12 Feb 2024 20:05:43 +0100</lastBuildDate>
     <atom:link href="https://blog.lays.pro./posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Building a Rag Part 3</title>
+      <link>https://blog.lays.pro./posts/building-a-rag-part-3/</link>
+      <pubDate>Mon, 12 Feb 2024 20:05:43 +0100</pubDate>
+      <guid>https://blog.lays.pro./posts/building-a-rag-part-3/</guid>
+      <description>In day 2, we setup metaflow to iterate faster, and we built a pipeline for scraping the markdown repo docs, clean and split it into chunks, then embed those chunks and storing them in a new vector database, LanceDB.
+Now, we can test our RAG app using the streamlit UI, and check if everything works fine.
+&amp;lt;&amp;ndash; insert screen of failure &amp;ndash;&amp;gt;
+As you can see, it hallucinates on this subject.</description>
+    </item>
     <item>
       <title>Journey into building a custom RAG (Day 2)</title>
       <link>https://blog.lays.pro./posts/building-a-rag-part-2/</link>
       <pubDate>Fri, 09 Feb 2024 01:23:06 +0100</pubDate>
       <guid>https://blog.lays.pro./posts/building-a-rag-part-2/</guid>
-      <description>Now, I want to check if the context is well retrieved. I did an experiment where I took one part of huggingface TRL library that is supposed to be included in my embeddings, regarding DPO:
-I asked my model questions about DPO, but it wouldn&amp;rsquo;t get them right, it seems like he didn&amp;rsquo;t get it in its context.
-Thanks to my metaflow pipeline I could access the dataframe containing the data before embedding and indexing (Flow.</description>
+      <description>Now that I have a basic RAG working, I performed a few experiments to assess its accuracy in retrieving relevant documents.
+I did an experiment where I took one part of huggingface TRL library that is supposed to be included in my embeddings, regarding DPO (Direct Preference Optimization) :
+Then, I asked my model questions about it, but it wouldn&amp;rsquo;t get them right, and outputted something like chatGPT would, without context and knowledge about DPO.</description>
     </item>
     <item>
       <title>Journey into building a custom RAG (Day 1)</title>
@@ -29,7 +39,7 @@ Thanks to my metaflow pipeline I could access the dataframe containing the data 
       <guid>https://blog.lays.pro./posts/building-a-rag-part-1/</guid>
       <description>I am currently building a RAG (Retrieval Augmented Generation) LLM application, and recently decided to share my journey on this blog.
 I skip the intro and jump straight to my current status. Here&amp;rsquo;s where I am:
-Starting Point: To get started with all the boilerplate code, I used the Metaflow RAG demo repository and this anyScale blog post for insights and second point of view. Metaflow&amp;rsquo;s repo include a streamlit chat webapp, utilities for scraping and parsing markdown documentation files, tools to retrieve embedded documents to augment the user prompt, etc.</description>
+Starting Point: To get started with all the boilerplate code, I used the Metaflow RAG demo repository and this anyScale blog post for insights and second point of view. Metaflow&amp;rsquo;s repo include a streamlit chat webapp, utilities for scraping and parsing markdown documentation files, etc.</description>
     </item>
     <item>
       <title>Develop a Retrieval Augmented Generation (RAG) LLM Application</title>

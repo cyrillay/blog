@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Building a Rag Part 3 | Cyril LAY</title>
+<meta name="keywords" content="">
+<meta name="description" content="In day 2, we setup metaflow to iterate faster, and we built a pipeline for scraping the markdown repo docs, clean and split it into chunks, then embed those chunks and storing them in a new vector database, LanceDB.
+Now, we can test our RAG app using the streamlit UI, and check if everything works fine.
+&lt;&ndash; insert screen of failure &ndash;&gt;
+As you can see, it hallucinates on this subject.">
+<meta name="author" content="Cyril LAY">
+<link rel="canonical" href="https://blog.lays.pro./posts/building-a-rag-part-3/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.5ff2630c4d1b3e25bc21f0ecd96681dbcf58219e741fa627857820b5485cb770.css" integrity="sha256-X/JjDE0bPiW8IfDs2WaB289YIZ50H6YnhXggtUhct3A=" rel="preload stylesheet" as="style">
+<link rel="icon" href="https://blog.lays.pro./favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://blog.lays.pro./favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://blog.lays.pro./favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://blog.lays.pro./apple-touch-icon.png">
+<link rel="mask-icon" href="https://blog.lays.pro./safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Building a Rag Part 3" />
+<meta property="og:description" content="In day 2, we setup metaflow to iterate faster, and we built a pipeline for scraping the markdown repo docs, clean and split it into chunks, then embed those chunks and storing them in a new vector database, LanceDB.
+Now, we can test our RAG app using the streamlit UI, and check if everything works fine.
+&lt;&ndash; insert screen of failure &ndash;&gt;
+As you can see, it hallucinates on this subject." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.lays.pro./posts/building-a-rag-part-3/" /><meta property="og:image" content="https://blog.lays.pro./assets/images/mixtral.png"/><meta property="article:section" content="posts" />
+<meta property="article:published_time" content="2024-02-12T20:05:43+01:00" />
+<meta property="article:modified_time" content="2024-02-12T20:05:43+01:00" /><meta property="og:site_name" content="AI &amp; Data blog by Cyril LAY" />
+
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://blog.lays.pro./assets/images/mixtral.png"/>
+
+<meta name="twitter:title" content="Building a Rag Part 3"/>
+<meta name="twitter:description" content="In day 2, we setup metaflow to iterate faster, and we built a pipeline for scraping the markdown repo docs, clean and split it into chunks, then embed those chunks and storing them in a new vector database, LanceDB.
+Now, we can test our RAG app using the streamlit UI, and check if everything works fine.
+&lt;&ndash; insert screen of failure &ndash;&gt;
+As you can see, it hallucinates on this subject."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://blog.lays.pro./posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Building a Rag Part 3",
+      "item": "https://blog.lays.pro./posts/building-a-rag-part-3/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Building a Rag Part 3",
+  "name": "Building a Rag Part 3",
+  "description": "In day 2, we setup metaflow to iterate faster, and we built a pipeline for scraping the markdown repo docs, clean and split it into chunks, then embed those chunks and storing them in a new vector database, LanceDB.\nNow, we can test our RAG app using the streamlit UI, and check if everything works fine.\n\u0026lt;\u0026ndash; insert screen of failure \u0026ndash;\u0026gt;\nAs you can see, it hallucinates on this subject.",
+  "keywords": [
+    
+  ],
+  "articleBody": "In day 2, we setup metaflow to iterate faster, and we built a pipeline for scraping the markdown repo docs, clean and split it into chunks, then embed those chunks and storing them in a new vector database, LanceDB.\nNow, we can test our RAG app using the streamlit UI, and check if everything works fine.\n\u003c– insert screen of failure –\u003e\nAs you can see, it hallucinates on this subject. I debugged it like this :\nCheck what was the context given for that query The context is absolutely not relevant Check the dataframe before embedding to see if there is anything regarding DPO There isn’t, so it either wasn’t scraped at all, or was filtered out during preprocessing steps My intuitions were : it was a too small chunk of text that filtered out or, it comes from a special .mdx file (Docusaurus) that is not handled by the crawler. Both proved to be wrong 😂 Our thresholds are big enough that the chunk in HF docs fits : df = df[df.word_count \u003e 15] ; df = df[df.char_count \u003e 50] The crawler do handles .mdx files The issue was some special filter in the open-source code I took that was parsing the mdx file :\ndef get_contents_until_next_section(lines, start_idx=0): \"\"\" Get the contents of a section of a docusaurus markdown file. \"\"\" _i = start_idx + 1 # N = total number of lines in the current file N = len(lines) contents = [] # Stop when we reach the end of the file or a new top level section while _i \u003c N and not lines[_i].startswith(\"#\"): try: if lines[_i + 1].startswith(\"-\"): break except IndexError: pass # end of file contents.append(lines[_i]) _i += 1 return \" \".join(contents).strip() Here is the beginning of the raw .mdx content from the part about DPO:\n# DPO Trainer TRL supports the DPO Trainer for training language models from preference data, as described in the paper [Direct Preference Optimization: Your Language Model is Secretly a Reward Model](https://arxiv.org/abs/2305.18290) by Rafailov et al., 2023. For a full example have a look at [`examples/scripts/dpo.py`](https://github.com/huggingface/trl/blob/main/examples/scripts/dpo.py). The first step as always is to train your SFT model, to ensure the data we train on is in-distribution for the DPO algorithm. ## Expected dataset format The DPO trainer expects a very specific format for the dataset. Since the model will be trained to directly optimize the preference of which sentence is the most relevant, given two sentences. We provide an example from the [`Anthropic/hh-rlhf`](https://huggingface.co/datasets/Anthropic/hh-rlhf) dataset below: \u003cdiv style=\"text-align: center\"\u003e \u003cimg src=\"https://huggingface.co/datasets/trl-internal-testing/example-images/resolve/main/images/rlhf-antropic-example.png\", width=\"50%\"\u003e \u003c/div\u003e Therefore the final dataset object should contain these 3 entries if you use the default `DPODataCollatorWithPadding` data collator. The entries should be named: - `prompt` - `chosen` - `rejected` for example: Can you spot the issue ? 🤓\nYes, the if lines[_i + 1].startswith(\"-\"): filter will exit the parsing loop at the first bullet point ! Not sure why Outerbounds (devs who worked on the original code I used) wanted that, but I removed the filter, reran the pipeline, and it worked better !\n\u003c– insert screen of success with new UI –\u003e\nNext steps:\n",
+  "wordCount" : "518",
+  "inLanguage": "en",
+  "datePublished": "2024-02-12T20:05:43+01:00",
+  "dateModified": "2024-02-12T20:05:43+01:00",
+  "author":{
+    "@type": "Person",
+    "name": "Cyril LAY"
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://blog.lays.pro./posts/building-a-rag-part-3/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Cyril LAY",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://blog.lays.pro./favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+
+<header class="header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://blog.lays.pro./" accesskey="h" title="Cyril LAY (Alt + H)">Cyril LAY</a>
+            <div class="logo-switches">
+            </div>
+        </div>
+        <ul id="menu">
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    
+    <h1 class="post-title entry-hint-parent">
+      Building a Rag Part 3
+    </h1>
+    <div class="post-meta"><span title='2024-02-12 20:05:43 +0100 CET'>February 12, 2024</span>&nbsp;·&nbsp;Cyril LAY
+
+</div>
+  </header> 
+  <div class="post-content"><p>In day 2, we setup metaflow to iterate faster, and we built a pipeline
+for scraping the markdown repo docs, clean and split it into chunks, then
+embed those chunks and storing them in a new vector database, LanceDB.</p>
+<p>Now, we can test our RAG app using the streamlit UI, and check if everything
+works fine.</p>
+<p>&lt;&ndash; insert screen of failure &ndash;&gt;</p>
+<p>As you can see, it hallucinates on this subject. I debugged it like this :</p>
+<ul>
+<li>Check what was the context given for that query</li>
+<li>The context is absolutely not relevant</li>
+<li>Check the dataframe before embedding to see if there is anything regarding DPO</li>
+<li>There isn&rsquo;t, so it either wasn&rsquo;t scraped at all, or was filtered out during preprocessing steps</li>
+<li>My intuitions were :
+<ul>
+<li>it was a too small chunk of text that filtered out</li>
+<li>or, it comes from a special <code>.mdx</code> file (<a href="https://docusaurus.io/fr/docs/markdown-features">Docusaurus</a>)
+that is not handled by the crawler.</li>
+</ul>
+</li>
+<li>Both proved to be wrong 😂
+<ul>
+<li>Our thresholds are big enough that the chunk in HF docs fits : <code>df = df[df.word_count &gt; 15] ; df = df[df.char_count &gt; 50]</code></li>
+<li>The crawler do handles <code>.mdx</code> files</li>
+</ul>
+</li>
+</ul>
+<p>The issue was some special filter in the open-source code I took that was parsing the mdx file :</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_contents_until_next_section</span>(lines, start_idx<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>):
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;&#34;&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    Get the contents of a section of a docusaurus markdown file.
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+</span></span><span style="display:flex;"><span>    _i <span style="color:#f92672">=</span> start_idx <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># N = total number of lines in the current file</span>
+</span></span><span style="display:flex;"><span>    N <span style="color:#f92672">=</span> len(lines)
+</span></span><span style="display:flex;"><span>    contents <span style="color:#f92672">=</span> []
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Stop when we reach the end of the file or a new top level section</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">while</span> _i <span style="color:#f92672">&lt;</span> N <span style="color:#f92672">and</span> <span style="color:#f92672">not</span> lines[_i]<span style="color:#f92672">.</span>startswith(<span style="color:#e6db74">&#34;#&#34;</span>):
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">try</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">if</span> lines[_i <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>startswith(<span style="color:#e6db74">&#34;-&#34;</span>):
+</span></span><span style="display:flex;"><span>                <span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">except</span> <span style="color:#a6e22e">IndexError</span>:
+</span></span><span style="display:flex;"><span>            <span style="color:#66d9ef">pass</span>  <span style="color:#75715e"># end of file</span>
+</span></span><span style="display:flex;"><span>        contents<span style="color:#f92672">.</span>append(lines[_i])
+</span></span><span style="display:flex;"><span>        _i <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34; &#34;</span><span style="color:#f92672">.</span>join(contents)<span style="color:#f92672">.</span>strip()
+</span></span></code></pre></div><p>Here is the beginning of the raw <code>.mdx</code> content from the part about DPO:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-markdown" data-lang="markdown"><span style="display:flex;"><span># DPO Trainer
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>TRL supports the DPO Trainer for training language models from preference data, as described in the paper [<span style="color:#f92672">Direct Preference Optimization: Your Language Model is Secretly a Reward Model</span>](<span style="color:#a6e22e">https://arxiv.org/abs/2305.18290</span>) by Rafailov et al., 2023. For a full example have a look at  [<span style="color:#f92672">`examples/scripts/dpo.py`</span>](<span style="color:#a6e22e">https://github.com/huggingface/trl/blob/main/examples/scripts/dpo.py</span>).
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>The first step as always is to train your SFT model, to ensure the data we train on is in-distribution for the DPO algorithm.
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">## Expected dataset format
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>The DPO trainer expects a very specific format for the dataset. Since the model will be trained to directly optimize the preference of which sentence is the most relevant, given two sentences. We provide an example from the [<span style="color:#f92672">`Anthropic/hh-rlhf`</span>](<span style="color:#a6e22e">https://huggingface.co/datasets/Anthropic/hh-rlhf</span>) dataset below:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">div</span> <span style="color:#a6e22e">style</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;text-align: center&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;<span style="color:#f92672">img</span> <span style="color:#a6e22e">src</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;https://huggingface.co/datasets/trl-internal-testing/example-images/resolve/main/images/rlhf-antropic-example.png&#34;</span><span style="color:#960050;background-color:#1e0010">,</span> <span style="color:#a6e22e">width</span><span style="color:#f92672">=</span><span style="color:#e6db74">&#34;50%&#34;</span>&gt;
+</span></span><span style="display:flex;"><span>&lt;/<span style="color:#f92672">div</span>&gt;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Therefore the final dataset object should contain these 3 entries if you use the default <span style="color:#e6db74">`DPODataCollatorWithPadding`</span> data collator. The entries should be named:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> <span style="color:#e6db74">`prompt`</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> <span style="color:#e6db74">`chosen`</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">-</span> <span style="color:#e6db74">`rejected`</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>for example:
+</span></span></code></pre></div><p>Can you spot the issue ? 🤓</p>
+<p>Yes, the <code>if lines[_i + 1].startswith(&quot;-&quot;):</code> filter will exit the parsing loop at
+the first bullet point !
+Not sure why Outerbounds (devs who worked on the original code I used) wanted that, but I removed the filter, reran the
+pipeline, and it worked better !</p>
+<p>&lt;&ndash; insert screen of success with new UI &ndash;&gt;</p>
+<p>Next steps:</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2024 <a href="https://blog.lays.pro./">Cyril LAY</a></span>
+    <span>
+        Powered by
+        <a href="https://gohugo.io/" rel="noopener noreferrer" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
