@@ -11,18 +11,8 @@
     </image>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 12 Feb 2024 20:05:43 +0100</lastBuildDate>
+    <lastBuildDate>Fri, 09 Feb 2024 01:23:06 +0100</lastBuildDate>
     <atom:link href="https://blog.lays.pro./posts/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>Building a Rag Part 3</title>
-      <link>https://blog.lays.pro./posts/building-a-rag-part-3/</link>
-      <pubDate>Mon, 12 Feb 2024 20:05:43 +0100</pubDate>
-      <guid>https://blog.lays.pro./posts/building-a-rag-part-3/</guid>
-      <description>In day 2, we setup metaflow to iterate faster, and we built a pipeline for scraping the markdown repo docs, clean and split it into chunks, then embed those chunks and storing them in a new vector database, LanceDB.
-Now, we can test our RAG app using the streamlit UI, and check if everything works fine.
-&amp;lt;&amp;ndash; insert screen of failure &amp;ndash;&amp;gt;
-As you can see, it hallucinates on this subject.</description>
-    </item>
     <item>
       <title>Journey into building a custom RAG (Day 2)</title>
       <link>https://blog.lays.pro./posts/building-a-rag-part-2/</link>
