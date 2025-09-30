@@ -1,6 +1,6 @@
 +++
 title = 'Load Testing Text Llm'
-date = 2025-09-30T15:17:57+02:00
+date = 2025-09-30
 +++
 
 # Load Testing Open-Source LLMs on H100  

@@ -11,12 +11,12 @@
     </image>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 30 Sep 2025 15:17:57 +0200</lastBuildDate>
+    <lastBuildDate>Tue, 30 Sep 2025 00:00:00 +0000</lastBuildDate>
     <atom:link href="https://blog.lays.pro./index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Load Testing Text Llm</title>
       <link>https://blog.lays.pro./posts/load-testing-text-llm/</link>
-      <pubDate>Tue, 30 Sep 2025 15:17:57 +0200</pubDate>
+      <pubDate>Tue, 30 Sep 2025 00:00:00 +0000</pubDate>
       <guid>https://blog.lays.pro./posts/load-testing-text-llm/</guid>
       <description>Load Testing Open-Source LLMs on H100 I am working as an LLMOps engineer since a few years, currently on a mission for the French government.
 Our team is building an API gateway to provide French administrations with access to open-source large language models (LLMs).

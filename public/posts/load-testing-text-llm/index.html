@@ -36,8 +36,8 @@ I recently focused on load testing newer models to evaluate if they could become
 This post shares results and methodology for text models." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.lays.pro./posts/load-testing-text-llm/" /><meta property="og:image" content="https://blog.lays.pro./assets/images/mixtral.png"/><meta property="article:section" content="posts" />
-<meta property="article:published_time" content="2025-09-30T15:17:57+02:00" />
-<meta property="article:modified_time" content="2025-09-30T15:17:57+02:00" /><meta property="og:site_name" content="AI &amp; Data blog by Cyril LAY" />
+<meta property="article:published_time" content="2025-09-30T00:00:00+00:00" />
+<meta property="article:modified_time" content="2025-09-30T00:00:00+00:00" /><meta property="og:site_name" content="AI &amp; Data blog by Cyril LAY" />
 
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:image" content="https://blog.lays.pro./assets/images/mixtral.png"/>
@@ -82,8 +82,8 @@ This post shares results and methodology for text models."/>
   "articleBody": "Load Testing Open-Source LLMs on H100 I am working as an LLMOps engineer since a few years, currently on a mission for the French government.\nOur team is building an API gateway to provide French administrations with access to open-source large language models (LLMs).\nI recently focused on load testing newer models to evaluate if they could become candidates for production.\nThis post shares results and methodology for text models.\n(Next week I’ll publish the same analysis for audio models.)\nBenchmark Setup All benchmarks were run with the following setup:\nHardware: 1× NVIDIA H100 (80 GB VRAM), 24 CPU cores, 230 GB RAM Framework: vLLM 0.10.2 Environment: Kubernetes cluster (cloud deployment) Dataset: prompts sampled randomly from Alpaca dataset Prefix caching: disabled (to avoid biased results) Protocol: For each concurrency level, run 3 iterations Results averaged to reduce variability from prompt length and output size Throughput vs. Latency 📊 [placeholder: graph TTFT comparison across models]\n📊 [placeholder: graph throughput comparison across models]\nA Note on “Concurrent Requests” vs. “Users” In practice, the number of concurrent requests is not equal to the number of simultaneous users.\nUsers do not all send queries at the exact same time.\nExample:\n100 users Each sends a request every ~40 s Average request takes 20 s to process On average, each user is “active” (waiting for a response) 20/40 = 50% of the time.\nSo 100 users ≈ 50 concurrent requests.\nThis estimation is rough and depends on the type of usage:\nHuman interacting with a chatbot → lower concurrency Automated classification pipeline → higher concurrency Key Takeaways Benchmarks were run on H100 (80 GB VRAM) with vLLM 0.10.2 in a Kubernetes environment TTFT and throughput vary significantly depending on the model, even on identical hardware Concurrency levels in benchmarks are not directly equal to number of end-users Results provide a baseline for evaluating candidate models for production usage Next Steps I will share benchmarks for audio models next week.\nIn the meantime:\nHave you measured similar metrics? Do your results align, or differ, on other hardware / deployment setups? 👉 If you are working on LLM deployments and want to exchange notes on benchmarking methodology or results, feel free to reach out.\n",
   "wordCount" : "367",
   "inLanguage": "en",
-  "datePublished": "2025-09-30T15:17:57+02:00",
-  "dateModified": "2025-09-30T15:17:57+02:00",
+  "datePublished": "2025-09-30T00:00:00Z",
+  "dateModified": "2025-09-30T00:00:00Z",
   "author":{
     "@type": "Person",
     "name": "Cyril LAY"
@@ -125,7 +125,7 @@ This post shares results and methodology for text models."/>
     <h1 class="post-title entry-hint-parent">
       Load Testing Text Llm
     </h1>
-    <div class="post-meta"><span title='2025-09-30 15:17:57 +0200 CEST'>September 30, 2025</span>&nbsp;·&nbsp;Cyril LAY
+    <div class="post-meta"><span title='2025-09-30 00:00:00 +0000 UTC'>September 30, 2025</span>&nbsp;·&nbsp;Cyril LAY
 
 </div>
   </header> 
