@@ -40,7 +40,7 @@ aim for a partition count equal to four times the cluster's core count (e.g., a 
  From experience, it's hard to have a bigger percentage, and you'll run into OOM issues as other system processes also need resources.
  If you have less than that, you're probably waisting some money.
 - Leverage solutions like [Elastigroup](https://spot.io/product/elastigroup/) to **reduce cloud expenses**.
-They offer affordable spot instances and use predictive rebalancing to mitigate the risks associated with spot instance interruptions.
+They offer very cheap spot instances (less than half the real price) and use predictive rebalancing to mitigate the risks associated with spot instance interruptions.
 
 ### Conclusion
 
